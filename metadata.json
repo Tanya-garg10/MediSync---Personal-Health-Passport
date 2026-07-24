@@ -1,0 +1,6 @@
+{
+  "name": "MediSync",
+  "description": "A patient-controlled digital health platform where users upload their medical records, and AI organizes them into a personal health timeline. Share your complete history with any doctor instantly via a unique QR code.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
