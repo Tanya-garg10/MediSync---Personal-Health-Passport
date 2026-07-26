@@ -55,7 +55,7 @@ export default function App() {
   const [loadingStellar, setLoadingStellar] = useState(false);
 
   // Patient Consent States
-  const [activeShareTab, setActiveShareTab] = useState<"standard" | "stellar">("standard");
+  const [activeShareTab, setActiveShareTab] = useState<"standard" | "stellar">("stellar");
   const [consentDoctorName, setConsentDoctorName] = useState("");
   const [consentReportId, setConsentReportId] = useState("");
   const [consentPermission, setConsentPermission] = useState<"Read Only" | "Full Access">("Read Only");
@@ -70,6 +70,9 @@ export default function App() {
   const [consentVerifyData, setConsentVerifyData] = useState<any | null>(null);
   const [consentError, setConsentError] = useState<string | null>(null);
 
+  const [recordShare, setRecordShare] = useState<any | null>(null);
+  const [isEmergencyView, setIsEmergencyView] = useState(false);
+
   const fetchStellarWallet = async () => {
     setLoadingStellar(true);
     try {
@@ -78,8 +81,8 @@ export default function App() {
         const data = await response.json();
         setStellarWallet(data);
       }
-    } catch (err) {
-      console.error("Failed to fetch Stellar wallet", err);
+    } catch {
+      /* ignore */
     } finally {
       setLoadingStellar(false);
     }
@@ -89,7 +92,6 @@ export default function App() {
     fetchStellarWallet();
   }, []);
 
-  // Routine to initialize a clean passport with a client legal name directly with cloud server
   const handleInitializeNewPassport = async (fullName: string) => {
     setLoading(true);
     try {
@@ -98,16 +100,13 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName }),
       });
-      if (!response.ok) {
-        throw new Error("Could not initialize credentials.");
-      }
+      if (!response.ok) throw new Error("Could not initialize passport.");
       const newPassport: PassportData = await response.json();
       setPassport(newPassport);
       setPassportId(newPassport.id);
       setIsAuthenticated(true);
     } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "Failed to initialize custom sovereign database passport.");
+      alert(err?.message || "Failed to create passport.");
     } finally {
       setLoading(false);
     }
@@ -120,41 +119,69 @@ export default function App() {
     try {
       const res = await fetch(`/api/consent/verify/${cId}`);
       const data = await res.json();
-      if (data.valid === false) {
-        setConsentError(data.reason || "Patient consent has expired or is invalid.");
+      if (data.verification?.valid === false || data.valid === false) {
+        setConsentError(data.verification?.reason || data.reason || "Consent invalid.");
       } else {
         setConsentVerifyData(data);
       }
-    } catch (err: any) {
-      console.error(err);
-      setConsentError("Network connection failure checking Stellar consensus ledger.");
+    } catch {
+      setConsentError("Could not verify consent.");
     } finally {
       setVerifyingConsent(false);
     }
   };
 
-  // Hash-based sharing link lookups
+  const loadRecordShare = async (pId: string, eId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/records/${pId}/share/${eId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Share load failed");
+      setRecordShare(data);
+      setIsShareView(true);
+    } catch (err: any) {
+      setError(err?.message || "Share load failed");
+      setRecordShare(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const handleHashRouter = () => {
       const hash = window.location.hash;
-      if (hash && hash.startsWith("#share-")) {
-        const sharedId = hash.replace("#share-", "");
-        if (sharedId) {
-          setIsShareView(true);
-          setPassportId(sharedId);
+      setRecordShare(null);
+      setIsEmergencyView(false);
+      if (hash.startsWith("#verify-")) {
+        const rest = hash.replace("#verify-", "");
+        const idx = rest.indexOf("-");
+        const pId = rest.slice(0, idx);
+        const eId = rest.slice(idx + 1);
+        if (pId && eId) {
+          setPassportId(pId);
           setConsentId(null);
-          setConsentVerifyData(null);
+          void loadRecordShare(pId, eId);
         }
-      } else if (hash && hash.startsWith("#doctor-consent-")) {
+      } else if (hash.startsWith("#emergency-")) {
+        const sharedId = hash.replace("#emergency-", "");
+        setIsEmergencyView(true);
+        setIsShareView(true);
+        setPassportId(sharedId || "demo");
+        setConsentId(null);
+      } else if (hash.startsWith("#share-")) {
+        const sharedId = hash.replace("#share-", "");
+        setIsShareView(true);
+        setPassportId(sharedId);
+        setConsentId(null);
+        setConsentVerifyData(null);
+      } else if (hash.startsWith("#doctor-consent-")) {
         const cId = hash.replace("#doctor-consent-", "");
-        if (cId) {
-          setConsentId(cId);
-          setIsShareView(true);
-          verifyConsentOnClient(cId);
-        }
+        setConsentId(cId);
+        setIsShareView(true);
+        verifyConsentOnClient(cId);
       } else {
         setIsShareView(false);
-        setPassportId("demo");
         setConsentId(null);
         setConsentVerifyData(null);
       }
@@ -239,11 +266,11 @@ export default function App() {
       }
 
       const data = await response.json();
-      if (data.success) {
-        const consentUrl = `${window.location.origin}/#doctor-consent-${data.consent.id}`;
-        setGeneratedConsentId(data.consent.id);
+      const consent = data.consent || data;
+      if (consent?.id) {
+        const consentUrl = `${window.location.origin}/#doctor-consent-${consent.id}`;
+        setGeneratedConsentId(consent.id);
         setGeneratedConsentQR(consentUrl);
-        // Refresh patient data to load on timeline
         fetchPassportData(passport.id);
       }
     } catch (err: any) {
@@ -252,19 +279,6 @@ export default function App() {
     } finally {
       setRegisteringConsent(false);
     }
-  };
-
-  const handleEventParsed = (newEvent: TimelineEvent) => {
-    if (!passport) return;
-
-    // Append parsed event and update server
-    const updatedTimeline = [...passport.timeline, newEvent];
-    const updatedPassport: PassportData = {
-      ...passport,
-      timeline: updatedTimeline,
-    };
-
-    savePassportData(updatedPassport);
   };
 
   const handleDeleteEvent = (id: string) => {
@@ -476,7 +490,97 @@ export default function App() {
     );
   }
 
-  // If we are in read-only share view (scanned URL hash view)
+  if (isShareView && recordShare) {
+    const authentic = Boolean(recordShare.verification?.verified);
+    return (
+      <div className="min-h-screen bg-natural-bg text-natural-text font-sans p-6 md:p-10">
+        <div className="max-w-lg mx-auto bg-white rounded-[32px] border border-natural-sage p-6 space-y-4 shadow-sm">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-natural-olive">
+            MediSync · Verified Medical Record
+          </p>
+          <h1 className="font-serif text-2xl text-natural-dark">{recordShare.event?.title}</h1>
+          <p className="text-xs text-stone-500">{recordShare.event?.date}</p>
+          <ul className="text-xs space-y-1">
+            {(recordShare.event?.observations || []).map((o: any, i: number) => (
+              <li key={i}>
+                {o.name} {o.value} {o.unit}
+              </li>
+            ))}
+          </ul>
+          {!recordShare.event?.observations?.length && (
+            <p className="text-xs text-stone-600">{recordShare.event?.findings}</p>
+          )}
+          <div
+            className={`rounded-2xl p-4 text-xs ${
+              authentic
+                ? "bg-emerald-50 border border-emerald-100 text-emerald-950"
+                : "bg-red-50 border border-red-100 text-red-950"
+            }`}
+          >
+            <p className="font-bold text-sm">
+              {authentic ? "Authentic Record" : "Verification Failed"}
+            </p>
+            <p className="mt-1">
+              {authentic
+                ? "Verified using Stellar Testnet. Medical values are not stored on-chain — only cryptographic proof."
+                : recordShare.verification?.reason ||
+                  "The record does not match its registered cryptographic proof."}
+            </p>
+            <p className="mt-2 font-mono text-[10px] break-all">
+              Hash: {recordShare.hash}
+            </p>
+            {recordShare.contractId && (
+              <p className="font-mono text-[10px]">Contract: {recordShare.contractId}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isShareView && isEmergencyView && passport) {
+    return (
+      <div className="min-h-screen bg-[#1a1a10] text-white flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-[32px] border border-white/10 p-6 space-y-4">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-rose-300">
+            Emergency Health Passport
+          </p>
+          <h1 className="font-serif text-3xl">{passport.fullName}</h1>
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <p className="text-rose-300/70 text-[10px] uppercase">Blood Group</p>
+              <p className="font-bold">{passport.bloodType}</p>
+            </div>
+            <div>
+              <p className="text-rose-300/70 text-[10px] uppercase">Allergies</p>
+              <p className="font-bold">{passport.allergies.join(", ") || "—"}</p>
+            </div>
+            <div>
+              <p className="text-rose-300/70 text-[10px] uppercase">Conditions</p>
+              <p className="font-bold">{passport.conditions.join(", ") || "—"}</p>
+            </div>
+            <div>
+              <p className="text-rose-300/70 text-[10px] uppercase">Medications</p>
+              <p className="font-bold">{passport.medications.slice(0, 4).join(", ") || "—"}</p>
+            </div>
+          </div>
+          <div className="pt-3 border-t border-white/10 text-xs">
+            <p className="text-rose-300/70 text-[10px] uppercase">Emergency Contact</p>
+            <p className="font-bold">{passport.emergencyContact.name}</p>
+            <p className="font-mono">{passport.emergencyContact.phone}</p>
+          </div>
+          <img
+            alt="Emergency QR"
+            className="mx-auto bg-white p-2 rounded-xl"
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+              `${window.location.origin}/#emergency-${passport.id}`
+            )}`}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (isShareView) {
     return (
       <div className="min-h-screen bg-natural-bg text-natural-text font-sans pb-16 flex flex-col">
@@ -557,9 +661,9 @@ export default function App() {
             <div className="lg:col-span-8 space-y-8">
               <AIInsightWidget passport={passport} />
               <TimelineWidget 
-                events={passport.timeline} 
+                events={passport.timeline}
                 passportId={passport.id}
-                onDeleteEvent={() => {}} 
+                onDeleteEvent={() => {}}
                 onRefreshPassport={() => fetchPassportData(passport.id)}
               />
             </div>
@@ -740,7 +844,10 @@ export default function App() {
 
           {/* RIGHT: Document Uploader, AI Insights & Personal Timeline */}
           <div className="xl:col-span-7 space-y-8">
-            <DocumentUploader onEventParsed={handleEventParsed} />
+            <DocumentUploader
+              passportId={passport.id}
+              onPassportUpdated={(p) => setPassport(p)}
+            />
             <AIInsightWidget passport={passport} />
             <TimelineWidget 
               events={passport.timeline} 
@@ -805,16 +912,6 @@ export default function App() {
             {/* TAB SELECTOR */}
             <div className="grid grid-cols-2 border-b border-natural-sage bg-natural-bg/40 text-xs">
               <button
-                onClick={() => setActiveShareTab("standard")}
-                className={`py-3 text-center font-bold uppercase tracking-wider transition-all border-b-2 ${
-                  activeShareTab === "standard"
-                    ? "border-natural-olive text-natural-dark bg-white"
-                    : "border-transparent text-natural-olive/60 hover:text-natural-olive hover:bg-natural-sage/10"
-                }`}
-              >
-                1. Passport QR Share
-              </button>
-              <button
                 onClick={() => setActiveShareTab("stellar")}
                 className={`py-3 text-center font-bold uppercase tracking-wider transition-all border-b-2 ${
                   activeShareTab === "stellar"
@@ -822,7 +919,17 @@ export default function App() {
                     : "border-transparent text-natural-olive/60 hover:text-natural-olive hover:bg-natural-sage/10"
                 }`}
               >
-                2. Stellar Consent Time-Lock
+                1. Verified Record / Consent
+              </button>
+              <button
+                onClick={() => setActiveShareTab("standard")}
+                className={`py-3 text-center font-bold uppercase tracking-wider transition-all border-b-2 ${
+                  activeShareTab === "standard"
+                    ? "border-natural-olive text-natural-dark bg-white"
+                    : "border-transparent text-natural-olive/60 hover:text-natural-olive hover:bg-natural-sage/10"
+                }`}
+              >
+                2. Full Passport Link (legacy)
               </button>
             </div>
 
@@ -831,7 +938,7 @@ export default function App() {
               {activeShareTab === "standard" ? (
                 <div className="flex flex-col items-center text-center space-y-5">
                   <p className="text-xs text-natural-text leading-relaxed max-w-sm">
-                    Clinicians can scan this secure, decentralized QR code with any mobile device or tablet to instantly decrypt and view your health timeline.
+                    Legacy full-passport link (not ledger-verified). Prefer Verify on Stellar on a timeline record, then Share Verified Record.
                   </p>
 
                   {/* QR Code Canvas Frame */}

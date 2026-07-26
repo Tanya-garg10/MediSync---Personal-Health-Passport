@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 export type RecordType =
   | "Consultation"
   | "Laboratory"
@@ -14,9 +9,17 @@ export type RecordType =
 
 export type SeverityLevel = "Low" | "Medium" | "High";
 
+export interface ClinicalObservation {
+  name: string;
+  value: number | string;
+  unit: string;
+  date: string;
+  source: string;
+}
+
 export interface TimelineEvent {
   id: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   title: string;
   recordType: RecordType;
   severity: SeverityLevel;
@@ -25,11 +28,16 @@ export interface TimelineEvent {
   findings: string;
   nextSteps: string;
   rawTextSource?: string;
-  // Stellar Blockchain Integration Fields
+  sourceDocument?: string;
+  sourceDocumentHash?: string;
+  observations?: ClinicalObservation[];
+  medications?: string[];
+  conditions?: string[];
   stellarHash?: string;
   stellarTxId?: string;
   stellarTimestamp?: string;
   stellarStatus?: "verified" | "failed" | "not_verified";
+  stellarContractId?: string;
 }
 
 export interface EmergencyContact {
@@ -43,15 +51,21 @@ export interface StellarConsent {
   reportId: string;
   doctorName: string;
   permission: "Read Only" | "Full Access";
-  expiryHours: number; // 1, 24, 168 (7 days)
-  expiryTime: number; // unix timestamp in seconds
+  expiryHours: number;
+  expiryTime: number;
   createdAt: string;
   stellarTxId?: string;
   isValid?: boolean;
 }
 
+export interface FollowUpSuggestion {
+  recommendedDate: string;
+  note: string;
+  source: string;
+}
+
 export interface PassportData {
-  id: string; // unique ID for public sharing
+  id: string;
   fullName: string;
   dateOfBirth: string;
   bloodType: string;
@@ -62,4 +76,56 @@ export interface PassportData {
   timeline: TimelineEvent[];
   updatedAt: string;
   stellarConsents?: StellarConsent[];
+  pendingFollowUps?: FollowUpSuggestion[];
+}
+
+export interface CanonicalRecord {
+  recordId: string;
+  date: string;
+  type: string;
+  tests: Array<{ name: string; value: string; unit: string }>;
+  medications: string[];
+  conditions: string[];
+  sourceDocumentHash: string;
+}
+
+export interface StructuredDocument {
+  documentType: string;
+  date: string;
+  facility: string;
+  clinician: string;
+  tests: ClinicalObservation[];
+  medications: string[];
+  conditions: string[];
+  findings: string[];
+  followUp?: FollowUpSuggestion | null;
+  source: string;
+  rawText?: string;
+}
+
+export interface AgentStepStatus {
+  agent: "document" | "timeline" | "insight" | "orchestrator";
+  status: "pending" | "running" | "done" | "error";
+  message: string;
+}
+
+export interface InsightTrend {
+  name: string;
+  unit: string;
+  points: Array<{ date: string; value: number; source: string }>;
+  direction: "increasing" | "decreasing" | "stable" | "insufficient_data";
+  summary: string;
+  sources: string[];
+}
+
+export interface DoctorBrief {
+  patientName: string;
+  knownConditions: string[];
+  currentMedications: string[];
+  allergies: string[];
+  recentEvents: Array<{ date: string; title: string; recordType: string }>;
+  trends: InsightTrend[];
+  latestResults: ClinicalObservation[];
+  sources: string[];
+  lastUpdated: string;
 }

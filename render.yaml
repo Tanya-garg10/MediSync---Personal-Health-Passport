@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: medisync
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: STELLAR_SECRET_KEY
+        sync: false
+      - key: MEDISYNC_CONTRACT_ID
+        sync: false
+      - key: CORSAIR_KEK
+        sync: false
+      - key: CORSAIR_ENABLED
+        value: "true"

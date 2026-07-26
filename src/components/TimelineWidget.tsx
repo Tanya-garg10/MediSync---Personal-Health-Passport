@@ -39,60 +39,65 @@ export default function TimelineWidget({ events, passportId, onDeleteEvent, onRe
 
   const [notarizingId, setNotarizingId] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
-  const [verifyResults, setVerifyResults] = useState<Record<string, { success: boolean; message: string; checked: boolean }>>({});
+  const [verifyPanel, setVerifyPanel] = useState<Record<string, any>>({});
 
-  const handleNotarize = async (eventId: string) => {
+  const handleVerifyOnStellar = async (eventId: string) => {
     setNotarizingId(eventId);
     try {
       const response = await fetch(`/api/records/${passportId}/notarize/${eventId}`, {
         method: "POST",
       });
-      if (!response.ok) {
-        throw new Error("Stellar notarization failed");
-      }
       const data = await response.json();
-      if (data.success) {
-        onRefreshPassport();
-      }
+      if (!response.ok) throw new Error(data.error || "Stellar registration failed");
+      onRefreshPassport();
+      setVerifyPanel((prev) => ({
+        ...prev,
+        [eventId]: {
+          authentic: true,
+          hash: data.event?.stellarHash,
+          txId: data.event?.stellarTxId,
+          registeredAt: data.event?.stellarTimestamp,
+          contractId: data.event?.stellarContractId,
+          network: "Stellar Testnet",
+        },
+      }));
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Failed to submit transaction to Stellar Testnet.");
+      alert(err.message || "Failed to register on Stellar Testnet.");
     } finally {
       setNotarizingId(null);
     }
   };
 
-  const handleVerifyLedger = async (eventId: string) => {
+  const handleCheckVerification = async (eventId: string) => {
     setVerifyingId(eventId);
     try {
       const response = await fetch(`/api/records/${passportId}/verify/${eventId}`, {
         method: "POST",
       });
-      if (!response.ok) {
-        throw new Error("Ledger verification query failed");
-      }
       const data = await response.json();
-      setVerifyResults((prev) => ({
+      if (!response.ok) throw new Error(data.error || "Verification failed");
+      setVerifyPanel((prev) => ({
         ...prev,
         [eventId]: {
-          success: data.verified,
-          message: data.reason,
-          checked: true,
+          authentic: Boolean(data.verification?.verified),
+          reason: data.verification?.reason,
+          hash: data.hash,
+          network: data.network,
+          contractId: data.contractId,
         },
       }));
     } catch (err: any) {
-      console.error(err);
-      setVerifyResults((prev) => ({
+      setVerifyPanel((prev) => ({
         ...prev,
-        [eventId]: {
-          success: false,
-          message: "Could not fetch or verify the record from the Stellar ledger: " + err.message,
-          checked: true,
-        },
+        [eventId]: { authentic: false, reason: err.message },
       }));
     } finally {
       setVerifyingId(null);
     }
+  };
+
+  const shareVerified = (eventId: string) => {
+    window.location.hash = `verify-${passportId}-${eventId}`;
   };
 
   // Sorting timeline events from latest to oldest
@@ -468,99 +473,81 @@ export default function TimelineWidget({ events, passportId, onDeleteEvent, onRe
                     <strong>Diagnosis & findings:</strong> {evt.findings}
                   </p>
 
-                  {/* Stellar Blockchain Verification Controls */}
                   <div className="mt-3.5 pt-3 border-t border-natural-sage/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] font-medium text-[#5a5a40]/80 font-mono">
                     <div className="flex items-center gap-1.5 overflow-hidden">
-                      <span className="w-1.5 h-1.5 rounded-full bg-natural-olive/40 shrink-0"></span>
-                      <span className="truncate">
-                        SHA-256:{" "}
-                        <span className="bg-natural-sage/10 px-1.5 py-0.5 rounded-sm text-natural-dark text-[10px] break-all">
-                          {evt.stellarHash || "Computing..."}
+                      {evt.sourceDocument && (
+                        <span className="truncate text-[10px] font-sans">
+                          Source: {evt.sourceDocument}
                         </span>
-                      </span>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      {evt.stellarTxId ? (
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                      {evt.stellarStatus === "verified" ? (
                         <>
                           <span className="flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 text-[10px] font-bold font-sans">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                            Stellar Secured
+                            Verified on Stellar
                           </span>
-
                           <button
-                            onClick={() => handleVerifyLedger(evt.id)}
+                            onClick={() => handleCheckVerification(evt.id)}
                             disabled={verifyingId === evt.id}
-                            className="px-2.5 py-1 rounded-lg bg-natural-sage/20 border border-natural-sage hover:bg-natural-sage/40 transition-colors text-[10px] font-bold font-sans cursor-pointer text-natural-olive active:scale-95"
+                            className="px-2.5 py-1 rounded-lg bg-natural-sage/20 border border-natural-sage text-[10px] font-bold font-sans cursor-pointer text-natural-olive"
                           >
-                            {verifyingId === evt.id ? "Auditing Ledger..." : "Audit Ledger (Verify)"}
+                            {verifyingId === evt.id ? "Checking…" : "Open Verification"}
                           </button>
-
-                          <a
-                            href={`https://stellar.expert/explorer/testnet/tx/${evt.stellarTxId}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-2 py-1 text-natural-olive hover:text-natural-dark flex items-center gap-0.5 font-sans font-bold"
-                            title="Inspect notarization on public Stellar Testnet"
+                          <button
+                            onClick={() => shareVerified(evt.id)}
+                            className="px-2.5 py-1 rounded-lg bg-natural-olive text-white text-[10px] font-bold font-sans cursor-pointer"
                           >
-                            <span>Explorer</span>
-                            <span className="text-[9px]">↗</span>
-                          </a>
+                            Share Verified Record
+                          </button>
+                          {evt.stellarTxId && (
+                            <a
+                              href={`https://stellar.expert/explorer/testnet/tx/${evt.stellarTxId}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2 py-1 text-natural-olive font-sans font-bold"
+                            >
+                              Explorer ↗
+                            </a>
+                          )}
                         </>
                       ) : (
-                        <>
-                          <span className="text-stone-500 bg-stone-50 px-2 py-0.5 rounded-lg border border-stone-200 text-[10px] font-sans">
-                            Local Copy Only
-                          </span>
-
-                          <button
-                            onClick={() => handleNotarize(evt.id)}
-                            disabled={notarizingId === evt.id}
-                            className="px-3 py-1 rounded-lg bg-natural-olive hover:bg-natural-olive/90 text-white transition-all text-[10px] font-bold font-sans cursor-pointer shadow-3xs active:scale-95 flex items-center gap-1"
-                          >
-                            {notarizingId === evt.id ? (
-                              <>
-                                <span className="w-2 h-2 rounded-full border border-white border-t-transparent animate-spin inline-block"></span>
-                                Notarizing...
-                              </>
-                            ) : (
-                              "Notarize on Stellar"
-                            )}
-                          </button>
-                        </>
+                        <button
+                          onClick={() => handleVerifyOnStellar(evt.id)}
+                          disabled={notarizingId === evt.id}
+                          className="px-3 py-1 rounded-lg bg-natural-olive hover:bg-natural-olive/90 text-white text-[10px] font-bold font-sans cursor-pointer flex items-center gap-1"
+                        >
+                          {notarizingId === evt.id ? "Registering on Stellar…" : "Verify on Stellar"}
+                        </button>
                       )}
                     </div>
                   </div>
 
-                  {/* Tamper Detection Results Banner */}
-                  {verifyResults[evt.id]?.checked && (
+                  {verifyPanel[evt.id] && (
                     <div
-                      className={`mt-2.5 p-3 rounded-xl border flex items-start gap-2.5 animate-scale-up text-xs font-sans ${
-                        verifyResults[evt.id].success
+                      className={`mt-2.5 p-3 rounded-xl border text-xs font-sans ${
+                        verifyPanel[evt.id].authentic
                           ? "bg-emerald-50 border-emerald-100 text-emerald-950"
                           : "bg-red-50 border-red-100 text-red-950"
                       }`}
                     >
-                      <span className="text-sm shrink-0 mt-0.5">{verifyResults[evt.id].success ? "✓" : "⚠"}</span>
-                      <div className="flex-1">
-                        <p className="font-bold">
-                          {verifyResults[evt.id].success ? "Ledger Integrity Check Passed" : "Security Mismatch Alert!"}
+                      <p className="font-bold">
+                        {verifyPanel[evt.id].authentic
+                          ? "Record Verification — Authentic"
+                          : "Verification Failed"}
+                      </p>
+                      <p className="text-[11px] mt-1 opacity-90">
+                        {verifyPanel[evt.id].authentic
+                          ? `Network: ${verifyPanel[evt.id].network || "Stellar Testnet"} · Hash: ${(verifyPanel[evt.id].hash || "").slice(0, 12)}…`
+                          : verifyPanel[evt.id].reason ||
+                            "The record does not match its registered cryptographic proof."}
+                      </p>
+                      {verifyPanel[evt.id].contractId && (
+                        <p className="text-[10px] mt-1 font-mono">
+                          Contract: {verifyPanel[evt.id].contractId}
                         </p>
-                        <p className="text-[11px] mt-0.5 opacity-90 leading-relaxed">
-                          {verifyResults[evt.id].message}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          setVerifyResults((prev) => ({
-                            ...prev,
-                            [evt.id]: { ...prev[evt.id], checked: false },
-                          }))
-                        }
-                        className="text-[10px] hover:underline font-bold self-start bg-black/5 hover:bg-black/10 px-2 py-0.5 rounded-md"
-                      >
-                        Dismiss
-                      </button>
+                      )}
                     </div>
                   )}
 

@@ -1,169 +1,79 @@
-<div align="center">
-  <h1>MediSync - Personal Health Passport</h1>
-  <p>Your comprehensive digital health record powered by AI and blockchain technology</p>
-</div>
+# MediSync — Personal Health Passport
 
-## Overview
-
-MediSync is a Personal Health Passport application that enables users to manage their medical records, generate health passports, and gain AI-powered insights. Built with React, it integrates with Stellar blockchain for secure record management and Google's AI for intelligent health analysis.
+AI-powered Personal Health Passport: upload medical PDFs, structure them with Bindu agents, build a longitudinal timeline, prepare doctor visits, and share Stellar-verified records.
 
 ## Features
 
-- 🏥 **Personal Health Records** - Store and manage your medical information securely
-- 📄 **Health Passport Generation** - Generate professional PDF health passports
-- 🤖 **AI-Powered Insights** - Get intelligent health analysis using Google Gemini AI
-- 🔗 **Blockchain Integration** - Secure record management using Stellar blockchain
-- 📊 **Timeline View** - Visual timeline of your health history
-- 👨‍⚕️ **Clinician Overview** - Professional view for healthcare providers
-- 📤 **Document Upload** - Upload and manage medical documents
+- Text-based PDF ingestion (extraction without AI)
+- Bindu Document → Timeline → Insight agents + Prepare Doctor Visit
+- Evidence-backed insights from recorded values only
+- User-triggered Stellar record verification (Soroban when `MEDISYNC_CONTRACT_ID` is set)
+- Single-record verification QR for clinicians
+- Corsair → Google Calendar for detected follow-ups (when configured)
+- Emergency passport view (`#emergency-{id}`)
+- PDF health passport export
 
-## Tech Stack
+## Stack
 
-- **Frontend**: React 19, TypeScript, Tailwind CSS 4
-- **Backend**: Express.js
-- **AI Integration**: Google GenAI (Gemini)
-- **Blockchain**: Stellar SDK
-- **PDF Generation**: jsPDF
-- **Build Tool**: Vite
-- **Animations**: Motion (Framer Motion)
+- React 19, TypeScript, Tailwind CSS 4, Vite
+- Express
+- Google Gemini (`@google/genai`)
+- Stellar SDK (Testnet / Soroban)
+- Corsair + `@corsair-dev/googlecalendar`
+- jsPDF
 
-## Prerequisites
+## Setup
 
-- Node.js (v18 or higher)
-- npm or bun
-- Google Gemini API Key
-- Stellar Wallet (optional, for blockchain features)
+```bash
+npm install
+cp .env.example .env
+```
 
-## Installation
+Set at least `GEMINI_API_KEY`. Optional: `STELLAR_SECRET_KEY`, `MEDISYNC_CONTRACT_ID`, `CORSAIR_KEK`.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Tanya-garg10/MediSync---Personal-Health-Passport.git
-   cd MediSync---Personal-Health-Passport
-   ```
+Generate the demo sample PDF:
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+node scripts/generate-sample-pdf.mjs
+```
 
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edit `.env` and add your API keys:
-   ```
-   GEMINI_API_KEY=your_gemini_api_key_here
-   STELLAR_SECRET_KEY=your_stellar_secret_key_here
-   ```
-
-## Running the Application
-
-### Development Mode
+## Run
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`
+Open `http://localhost:3000` — use **Enter Demo Health Passport** (`demo` / `12345`).
 
-### Production Build
+Production:
 
 ```bash
 npm run build
 npm start
 ```
 
-## Project Structure
+## Demo flow
 
-```
-medisync/
-├── src/
-│   ├── components/
-│   │   ├── AIInsightWidget.tsx    # AI-powered health insights
-│   │   ├── ClinicianOverview.tsx  # Healthcare provider view
-│   │   ├── DocumentUploader.tsx   # Document management
-│   │   ├── LandingLoginPage.tsx   # Authentication and landing
-│   │   ├── PassportForm.tsx       # Health passport form
-│   │   └── TimelineWidget.tsx     # Health timeline visualization
-│   ├── utils/
-│   │   ├── pdfGenerator.ts        # PDF generation utilities
-│   │   └── stellarService.ts      # Blockchain integration
-│   ├── App.tsx                    # Main application component
-│   ├── main.tsx                   # Application entry point
-│   └── types.ts                   # TypeScript type definitions
-├── server.ts                      # Express server
-├── package.json
-└── tsconfig.json
-```
+1. Enter Demo Health Passport
+2. Try Sample Report → confirm structured values → timeline
+3. Bindu Hub → Prepare Doctor Visit
+4. Timeline → Verify on Stellar → Share Verified Record QR
+5. Follow-up chip → Add to Calendar (Corsair, if configured)
 
-## Features in Detail
+## Soroban contract
 
-### Health Passport
-- Generate comprehensive PDF health passports
-- Include personal information, medical history, and current conditions
-- Professional formatting suitable for healthcare providers
+Source: `contracts/medisync_registry` — `register_record(hash)` / `verify_record(hash)`.
 
-### AI Insights
-- Leverage Google Gemini AI for health analysis
-- Get personalized recommendations based on your health data
-- Interactive chat interface for health queries
+Deploy to Stellar Testnet, then set `MEDISYNC_CONTRACT_ID`. Without it, MediSync still registers hashes on Testnet via account ManageData.
 
-### Blockchain Security
-- Store health records on Stellar blockchain
-- Immutable and secure record keeping
-- Patient-controlled data access
+## Corsair
 
-### Timeline View
-- Visual representation of health events
-- Track appointments, procedures, and milestones
-- Easy navigation through health history
+Configure with Corsair CLI (`corsair setup --plugin=googlecalendar`) and `CORSAIR_KEK`. If unset, the Calendar action returns a clear configuration error (do not fake Calendar URLs).
 
-## API Keys Setup
+## Render
 
-### Google Gemini API
-1. Visit [Google AI Studio](https://ai.google.dev/)
-2. Create a project and generate an API key
-3. Add it to your `.env` file as `GEMINI_API_KEY`
+Use `render.yaml` or connect the repo as a single Node web service (`npm run build` / `npm start`).
 
-### Stellar Network
-1. Create a Stellar wallet at [Stellar Laboratory](https://laboratory.stellar.org/)
-2. Get your secret key
-3. Add it to your `.env` file as `STELLAR_SECRET_KEY`
+## Hackathon note
 
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-Copyright 2024 MediSync Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-## Support
-
-For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/Tanya-garg10/MediSync---Personal-Health-Passport).
-
-## Acknowledgments
-
-- Google AI for Gemini API
-- Stellar Development Foundation for blockchain infrastructure
-- The open-source community for the amazing tools and libraries used
+This is a demo MVP. Do not upload real sensitive medical information.

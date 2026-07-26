@@ -64,11 +64,11 @@ export function generateMedicalPassportPDF(passport: PassportData) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
     doc.setTextColor(colors.primaryOlive[0], colors.primaryOlive[1], colors.primaryOlive[2]);
-    doc.text("VERIFIED PATIENT OFFLINE DECRYPTED LEDGER", margin, 14);
+    doc.text("MEDISYNC PERSONAL HEALTH PASSPORT", margin, 14);
     
     doc.setFont("helvetica", "normal");
     doc.setTextColor(colors.secondaryText[0], colors.secondaryText[1], colors.secondaryText[2]);
-    doc.text(`AUTHENTICATION: AES-256 E2EE VALID`, pageWidth - margin, 14, { align: "right" });
+    doc.text(`STELLAR-BACKED VERIFICATION AVAILABLE`, pageWidth - margin, 14, { align: "right" });
 
     // Footer page indexes - Aligned precisely to the document margins
     doc.setFontSize(7);

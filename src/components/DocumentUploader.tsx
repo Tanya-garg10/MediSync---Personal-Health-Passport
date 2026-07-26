@@ -1,302 +1,304 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from "react";
-import { Upload, FileText, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
-import { TimelineEvent } from "../types";
+import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, ChevronDown } from "lucide-react";
+import type { AgentStepStatus, PassportData, StructuredDocument } from "../types";
 
 interface DocumentUploaderProps {
-  onEventParsed: (event: TimelineEvent) => void;
+  passportId: string;
+  onPassportUpdated: (passport: PassportData) => void;
 }
 
-const SAMPLE_DOCS = [
-  {
-    name: "🩸 CBC Lab Report (Anemia Hint)",
-    summary: "Complete Blood Count from Northern Path Lab",
-    text: `PATIENT: Aarav Sharma
-REPORT DATE: June 15, 2026
-CLINICIAN: Dr. Rakesh Gupta, MD
-LAB: Northern Pathology Labs
-
-FINDINGS: Hemoglobin level is low at 11.2 g/dL (normal range 13.5-17.5). White Blood Cells (WBC) are moderately elevated at 11.5 x10^3/uL. Platelets normal at 250 x10^3/uL. Fasting blood sugar is stable at 94 mg/dL. Renal indices BUN 15 and Creatinine 0.8 are completely healthy.
-
-CONCLUSION: Mild iron deficiency anemia is suggested, watch dietary intake.
-RECOMMENDATIONS: Take Ferrous Sulfate 325mg daily, review blood values in 12 weeks.`,
-  },
-  {
-    name: "🫀 Cardiology ECG Diagnostic",
-    summary: "Holter Monitor rhythm review",
-    text: `REPORT: Holter Electrocardiography Diagnostics
-REFERRING CLINICIAN: Dr. Sarah Lin (FACC)
-FACILITY: Metro Cardiovascular Diagnostics
-DATE: April 10, 2026
-
-ASSESSMENT: Patient experiences minor postural palpitations. 24-hour heart rhythm analysis shows normal sinus rhythm with occasional isolated premature atrial contractions (PACs), representing <0.5% of total beats. Average heart rate was 72 bpm. Systolic pressure averages 132 mmHg, Diastolic averages 82 mmHg, confirming mild Grade 1 Hypertension.
-
-ADVICE: Continue Lisinopril 10mg daily. Reduce caffeine and sodium intake. Avoid stress triggers.`,
-  },
-  {
-    name: "🦴 Orthopedic Knee MRI",
-    summary: "Left knee twist assessment",
-    text: `CITY ORTHOPAEDICS AND RADIOLOGY IMAGING
-DATE: September 5, 2025
-REFERRING: Dr. Rajesh Mehra (Orthopedic Surgeon)
-IMAGING STUDY: LEFT KNEE MRI
-
-FINDINGS: High signal intensity observed on T2-weighted scans along the femoral attachment of the anterior cruciate ligament (ACL) compatible with a mild Grade 1 partial sprain. Lateral and medial menisci are fully intact with normal morphology. Posterior cruciate ligament (PCL) is normal. No joint effusion.
-
-CONCLUSION: Mild left knee partial ACL sprain.
-MANAGEMENT: Standard clinical rehabilitation and physical therapy targeting quadricep conditioning for 6 weeks. Rest from contact pivot athletics.`,
-  },
-  {
-    name: "💉 Immunization Booster Receipt",
-    summary: "Tdap & Influenza logs",
-    text: `IMMUNIZATION SERVICE CENTRE
-DATE: October 12, 2024
-CLINICIAN: Nurse Susan Wright
-LOCATION: City Central Immunization Center
-
-PATIENT: Aarav Sharma
-IMMUNIZATIONS ADMINISTERED:
-- Tdap booster vaccine (0.5 mL IM, Left Deltoid, Lot #TD99281)
-- Influenza vaccine seasonal (0.5 mL IM, Right Deltoid, Lot #FL2211)
-
-Tolerated vaccine well. No immediate side effects.
-ADVICE: Normal soreness at vaccination site expected. Apply cold compress if needed.`,
-  },
-];
-
-export default function DocumentUploader({ onEventParsed }: DocumentUploaderProps) {
-  const [inputText, setInputText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default function DocumentUploader({ passportId, onPassportUpdated }: DocumentUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [structuring, setStructuring] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rawText, setRawText] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [document, setDocument] = useState<StructuredDocument | null>(null);
+  const [steps, setSteps] = useState<AgentStepStatus[]>([]);
+  const [showRaw, setShowRaw] = useState(false);
 
-  const handleTextParse = async (textToParse: string) => {
-    if (!textToParse.trim()) {
-      setError("Please write some notes or select a sample report first.");
-      return;
-    }
-
-    setLoading(true);
+  const reset = () => {
     setError(null);
+    setRawText("");
+    setFileName("");
+    setDocument(null);
+    setSteps([]);
+    setShowRaw(false);
+  };
 
+  const runStructure = async (text: string, name: string) => {
+    setStructuring(true);
+    setError(null);
     try {
-      const response = await fetch("/api/records/parse", {
+      const res = await fetch("/api/bindu/document", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: textToParse }),
+        body: JSON.stringify({ rawText: text, fileName: name }),
       });
-
-      if (!response.ok) {
-        throw new Error("Server failed to analyze the document. Please try again.");
+      const data = await res.json();
+      setSteps(data.steps || []);
+      if (!res.ok) {
+        setError(
+          data.message ||
+            data.error ||
+            "AI analysis is temporarily unavailable. Your medical record has not been modified."
+        );
+        setDocument(null);
+        return;
       }
-
-      const parsedEvent: TimelineEvent = await response.json();
-      onEventParsed(parsedEvent);
-      setInputText("");
-      setUploadedFileName(null);
-    } catch (err: any) {
-      console.error(err);
-      setError(err?.message || "Something went wrong while communicating with the AI. Please verify key settings.");
+      setDocument(data.document);
+    } catch (e: any) {
+      setError(e?.message || "Document agent failed");
     } finally {
-      setLoading(false);
+      setStructuring(false);
     }
   };
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
+  const handlePdf = async (file: File) => {
+    reset();
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setError("PDF documents supported in this MVP.");
+      return;
+    }
+    setExtracting(true);
+    setFileName(file.name);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/records/extract", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Extraction failed");
+        return;
+      }
+      setRawText(data.rawText);
+      await runStructure(data.rawText, data.fileName || file.name);
+    } catch (e: any) {
+      setError(e?.message || "Upload failed");
+    } finally {
+      setExtracting(false);
     }
   };
 
-  const simulateFileUpload = (fileName: string) => {
-    setUploadedFileName(fileName);
-    // Simulate reading medical text based on file name
-    if (fileName.toLowerCase().includes("blood")) {
-      setInputText(SAMPLE_DOCS[0].text);
-    } else if (fileName.toLowerCase().includes("heart") || fileName.toLowerCase().includes("cardio")) {
-      setInputText(SAMPLE_DOCS[1].text);
-    } else if (fileName.toLowerCase().includes("mri") || fileName.toLowerCase().includes("knee")) {
-      setInputText(SAMPLE_DOCS[2].text);
-    } else {
-      setInputText(
-        `[SCANNED MEDICAL UPLOAD: ${fileName}]\nDATE: ${
-          new Date().toISOString().split("T")[0]
-        }\nCLINICIAN: General Practitioner Dr. Roy\nFACILITY: Health Diagnostics Center\nFINDINGS: Routine annual health screening file uploaded for patient passport. Lungs clear, cardiovascular system exhibits normotension. Standard cholesterol borderline.\nADVICE: Annual regular follow-ups.`
-      );
+  const handleSample = async () => {
+    reset();
+    setExtracting(true);
+    setFileName("sample-blood-report.pdf");
+    try {
+      const fileRes = await fetch("/samples/sample-blood-report.pdf");
+      if (!fileRes.ok) throw new Error("Sample PDF missing");
+      const blob = await fileRes.blob();
+      const file = new File([blob], "sample-blood-report.pdf", { type: "application/pdf" });
+      await handlePdf(file);
+    } catch (e: any) {
+      setError(e?.message || "Could not load sample report");
+      setExtracting(false);
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      simulateFileUpload(file.name);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      simulateFileUpload(file.name);
-    }
-  };
-
-  const selectSample = (sampleText: string, sampleName: string) => {
-    setInputText(sampleText);
-    setUploadedFileName(sampleName);
+  const handleConfirm = async () => {
+    if (!document) return;
+    setConfirming(true);
     setError(null);
+    try {
+      const res = await fetch("/api/bindu/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passportId, document }),
+      });
+      const data = await res.json();
+      setSteps(data.steps || []);
+      if (!res.ok) {
+        setError(data.error || "Confirm failed");
+        return;
+      }
+      onPassportUpdated(data.passport);
+      reset();
+    } catch (e: any) {
+      setError(e?.message || "Confirm failed");
+    } finally {
+      setConfirming(false);
+    }
   };
+
+  const busy = extracting || structuring || confirming;
 
   return (
-    <div className="bg-white rounded-[32px] border border-natural-sage p-6 md:p-8 shadow-sm">
-      <div className="flex items-center justify-between mb-5">
+    <div className="bg-white rounded-[32px] border border-natural-sage p-6 shadow-sm space-y-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-serif font-bold text-natural-dark flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-natural-olive animate-pulse" />
-            Parse Medical Records with AI
-          </h2>
-          <p className="text-xs text-natural-text/75 mt-0.5">
-            Upload hospital reports, prescriptions, or scrawls to organize your timeline.
+          <h3 className="font-serif text-lg text-natural-dark">Upload Medical Record</h3>
+          <p className="text-xs text-stone-500 mt-1">
+            PDF documents supported in this MVP. Text is extracted without AI; Bindu Document Agent
+            structures clinical values.
           </p>
         </div>
+        <button
+          type="button"
+          onClick={handleSample}
+          disabled={busy}
+          className="text-[10px] font-bold uppercase tracking-wider px-3 py-2 rounded-xl border border-natural-olive/30 text-natural-olive hover:bg-natural-sage/40"
+        >
+          Try Sample Report
+        </button>
       </div>
 
-      {/* Grid: Left - Samples, Right - Active Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Sample selection pane */}
-        <div className="lg:col-span-5 space-y-3">
-          <label className="block text-[10px] uppercase font-mono font-bold text-natural-olive/60 tracking-wider mb-2">
-            Click to Try Clinical Samples
-          </label>
-          <div className="grid grid-cols-1 gap-2.5">
-            {SAMPLE_DOCS.map((doc, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => selectSample(doc.text, doc.name)}
-                className={`text-left p-3.5 rounded-xl border text-xs transition-all duration-200 ${
-                  uploadedFileName === doc.name
-                    ? "bg-[#e8ede0]/60 border-natural-olive text-natural-dark font-semibold shadow-sm"
-                    : "bg-natural-bg/40 hover:bg-[#e8ede0]/20 border-natural-sage/60 text-natural-text"
-                }`}
-              >
-                <p className="font-semibold">{doc.name}</p>
-                <p className="text-[10px] text-natural-text/60 mt-1 line-clamp-1">{doc.summary}</p>
-              </button>
-            ))}
-          </div>
+      <div
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setDragActive(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragActive(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragActive(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragActive(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f) void handlePdf(f);
+        }}
+        className={`rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
+          dragActive ? "border-natural-olive bg-natural-sage/30" : "border-natural-sage bg-natural-bg/40"
+        }`}
+      >
+        <Upload className="w-8 h-8 mx-auto text-natural-olive/60 mb-3" />
+        <p className="text-xs text-stone-600 mb-3">Drop a text-based PDF here</p>
+        <label className="inline-flex items-center gap-2 cursor-pointer bg-natural-olive text-white text-xs font-bold px-4 py-2.5 rounded-xl">
+          <FileText className="w-4 h-4" />
+          Select PDF
+          <input
+            type="file"
+            accept=".pdf,application/pdf"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handlePdf(f);
+            }}
+          />
+        </label>
+      </div>
+
+      {busy && (
+        <div className="flex items-center gap-2 text-xs text-natural-olive">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          {extracting ? "Extracting text…" : structuring ? "Document Agent running…" : "Confirming…"}
         </div>
+      )}
 
-        {/* Uploader interaction */}
-        <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
-          <div
-            onDragEnter={handleDrag}
-            onDragOver={handleDrag}
-            onDragLeave={handleDrag}
-            onDrop={handleDrop}
-            className={`relative rounded-2xl border border-dashed p-5 text-center transition-all flex flex-col items-center justify-center min-h-[140px] ${
-              dragActive
-                ? "border-natural-olive bg-natural-sage/20"
-                : "border-natural-sage hover:border-natural-olive/40 bg-natural-bg/50"
-            }`}
-          >
-            <input
-              type="file"
-              id="file-upload"
-              className="hidden"
-              onChange={handleFileChange}
-              accept=".pdf,.png,.jpg,.jpeg,.txt"
-            />
-            <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-              <Upload className={`w-9 h-9 ${dragActive ? "text-natural-olive animate-bounce" : "text-natural-olive/40"}`} />
-              <p className="text-xs font-semibold text-natural-text mt-2.5">
-                Drag prescription file here, or <span className="text-natural-olive font-bold hover:underline">browse</span>
-              </p>
-              <p className="text-[10px] text-natural-olive/60 mt-1">
-                Supports PDF, images, raw text files
-              </p>
-            </label>
+      {error && (
+        <div className="flex gap-2 p-3 rounded-xl bg-red-50 border border-red-100 text-xs text-red-800">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
 
-            {uploadedFileName && (
-              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-natural-sage text-natural-dark text-[10px] font-semibold border border-natural-olive/20 animate-fade-in">
-                <FileText className="w-3.5 h-3.5 text-natural-olive" />
-                <span>Active: {uploadedFileName}</span>
+      {steps.length > 0 && (
+        <div className="space-y-2 rounded-2xl border border-natural-sage p-4 bg-natural-bg/30">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-natural-olive">
+            AI Processing
+          </p>
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs">
+              {s.status === "done" ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : s.status === "running" ? (
+                <Loader2 className="w-4 h-4 animate-spin text-natural-olive shrink-0" />
+              ) : s.status === "error" ? (
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              ) : (
+                <span className="w-4 h-4 rounded-full border border-stone-300 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <span className="font-semibold capitalize">{s.agent} Agent</span>
+                <span className="text-stone-500"> — {s.message}</span>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {document && (
+        <div className="rounded-2xl border border-natural-sage p-4 space-y-4">
+          <div>
+            <h4 className="font-serif text-base text-natural-dark">
+              {document.documentType} — {document.date}
+            </h4>
+            {document.facility && (
+              <p className="text-xs text-stone-500 mt-1">Facility: {document.facility}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] uppercase font-mono font-bold text-natural-olive/70">
-                Or Paste Unstructured Doctor Notes / Transcription
-              </label>
-              {inputText && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInputText("");
-                    setUploadedFileName(null);
-                  }}
-                  className="text-[10px] text-red-700 hover:underline font-bold"
-                >
-                  Clear Notes
-                </button>
-              )}
+          {document.tests.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-natural-olive/70 font-mono uppercase tracking-wider">
+                    <th className="py-1">Test</th>
+                    <th className="py-1">Value</th>
+                    <th className="py-1">Unit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {document.tests.map((t, i) => (
+                    <tr key={i} className="border-t border-natural-sage/40">
+                      <td className="py-2 font-medium">{t.name}</td>
+                      <td className="py-2 font-mono">{t.value}</td>
+                      <td className="py-2 text-stone-500">{t.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="e.g. Patient Aarav visited Clinic today 14th May. Blood pressure is 135/85 mmHg. Penicillin allergy confirmed. Prescribed Azithromycin 250mg. Complete physical recovery expected in 2 weeks..."
-              rows={4}
-              className="w-full text-xs p-3.5 rounded-xl border border-natural-sage focus:outline-none focus:border-natural-olive focus:ring-1 focus:ring-natural-olive bg-natural-bg/40 text-natural-dark placeholder-natural-text/40 font-sans resize-none"
-            ></textarea>
-          </div>
+          )}
 
-          {error && (
-            <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-100 rounded-xl text-xs text-red-800">
-              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-700" />
-              <span>{error}</span>
-            </div>
+          {document.followUp && (
+            <p className="text-xs bg-natural-sage/40 rounded-xl px-3 py-2">
+              Follow-up recommended: <strong>{document.followUp.recommendedDate}</strong> —{" "}
+              {document.followUp.note}
+            </p>
           )}
 
           <button
             type="button"
-            disabled={loading || !inputText.trim()}
-            onClick={() => handleTextParse(inputText)}
-            className={`w-full py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-sm ${
-              loading
-                ? "bg-natural-sage text-natural-olive cursor-not-allowed"
-                : !inputText.trim()
-                ? "bg-natural-sage/20 text-[#5a5a40]/30 border border-natural-sage/10 cursor-not-allowed"
-                : "bg-natural-olive hover:bg-natural-olive/95 text-white shadow-xs font-serif italic text-sm"
-            }`}
+            onClick={() => setShowRaw((v) => !v)}
+            className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-natural-olive"
           >
-            {loading ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>AI Generating Medicine Timeline...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                <span>Run Timeline Extraction Model</span>
-              </>
-            )}
+            <ChevronDown className={`w-3.5 h-3.5 transition ${showRaw ? "rotate-180" : ""}`} />
+            View extracted text
           </button>
+          {showRaw && (
+            <pre className="text-[10px] whitespace-pre-wrap bg-stone-50 rounded-xl p-3 max-h-40 overflow-auto border border-stone-100">
+              {rawText}
+            </pre>
+          )}
+
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={reset}
+              className="px-4 py-2 rounded-xl text-xs border border-natural-sage"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={confirming}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-natural-olive text-white"
+            >
+              Confirm & Add
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

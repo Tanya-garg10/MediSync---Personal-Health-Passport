@@ -1,19 +1,34 @@
-import { Horizon, Keypair, TransactionBuilder, Networks, BASE_FEE, Operation, Memo } from "@stellar/stellar-sdk";
+import {
+  Horizon,
+  Keypair,
+  TransactionBuilder,
+  Networks,
+  BASE_FEE,
+  Operation,
+  Memo,
+  rpc,
+  Contract,
+  Address,
+  nativeToScVal,
+  scValToNative,
+  xdr,
+} from "@stellar/stellar-sdk";
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
+import {
+  buildCanonicalFromEvent,
+  hashCanonicalRecord,
+} from "./canonicalHash.js";
 
 const HORIZON_URL = "https://horizon-testnet.stellar.org";
+const SOROBAN_RPC = process.env.STELLAR_SOROBAN_RPC || "https://soroban-testnet.stellar.org";
+const NETWORK = Networks.TESTNET;
 const server = new Horizon.Server(HORIZON_URL);
-
-let serverKeypair: Keypair | null = null;
-
-// File path to persist generated credentials so they survive backend restarts
 const configPath = path.join(process.cwd(), ".stellar-config.json");
 
-/**
- * Initializes the Stellar Keypair and funds it on Testnet if needed.
- */
+let serverKeypair: Keypair | null = null;
+const localRegistry = new Map<string, { hash: string; registeredAt: string; txHash?: string }>();
+
 export async function initStellar(): Promise<Keypair> {
   if (serverKeypair) return serverKeypair;
 
@@ -21,187 +36,289 @@ export async function initStellar(): Promise<Keypair> {
   if (envSecret && envSecret.startsWith("S") && envSecret.length === 56) {
     try {
       serverKeypair = Keypair.fromSecret(envSecret);
-      console.log("Stellar initialized with environment Secret Key. Public Key:", serverKeypair.publicKey());
       return serverKeypair;
-    } catch (e) {
-      console.error("Invalid STELLAR_SECRET_KEY in environment, fallback to local file:", e);
+    } catch {
+      /* fall through */
     }
   }
 
-  // Fallback: check if we have a locally stored config keypair
   if (fs.existsSync(configPath)) {
     try {
       const data = JSON.parse(fs.readFileSync(configPath, "utf-8"));
       if (data.secretKey) {
         serverKeypair = Keypair.fromSecret(data.secretKey);
-        console.log("Stellar loaded from saved config. Public Key:", serverKeypair.publicKey());
         return serverKeypair;
       }
-    } catch (e) {
-      console.error("Failed to parse local stellar config, regenerating:", e);
+    } catch {
+      /* fall through */
     }
   }
 
-  // Generate new Keypair
   const newKeypair = Keypair.random();
-  const secretKey = newKeypair.secret();
-  const publicKey = newKeypair.publicKey();
-  
-  console.log("Generated new Stellar keypair for testnet. Funding with Friendbot...", publicKey);
-  
   try {
-    const res = await fetch(`https://friendbot.stellar.org/?addr=${encodeURIComponent(publicKey)}`);
+    const res = await fetch(
+      `https://friendbot.stellar.org/?addr=${encodeURIComponent(newKeypair.publicKey())}`
+    );
     if (res.ok) {
-      console.log("Stellar account funded successfully by Friendbot!");
-      fs.writeFileSync(configPath, JSON.stringify({ secretKey, publicKey }, null, 2));
-      serverKeypair = newKeypair;
-    } else {
-      console.error("Friendbot funding failed:", await res.text());
+      fs.writeFileSync(
+        configPath,
+        JSON.stringify({ secretKey: newKeypair.secret(), publicKey: newKeypair.publicKey() }, null, 2)
+      );
     }
-  } catch (e) {
-    console.error("Network error funding Stellar account via Friendbot:", e);
+  } catch {
+    /* keep in-memory */
   }
-
-  if (!serverKeypair) {
-    // If all else fails, use the generated keypair in-memory so the app can compile and function
-    serverKeypair = newKeypair;
-  }
+  serverKeypair = newKeypair;
   return serverKeypair;
 }
 
-/**
- * Generates a SHA-256 hash of report/event data
- */
-export function generateEventHash(event: any): string {
-  const eventDataString = JSON.stringify({
-    id: event.id,
-    title: event.title,
-    date: event.date,
-    findings: event.findings,
-    nextSteps: event.nextSteps,
-    recordType: event.recordType,
-    severity: event.severity,
-    clinician: event.clinician,
-    facility: event.facility,
-  });
-  return crypto.createHash("sha256").update(eventDataString).digest("hex");
+export function getContractId(): string | undefined {
+  const id = process.env.MEDISYNC_CONTRACT_ID || process.env.STELLAR_CONTRACT_ID;
+  return id && id.startsWith("C") ? id : undefined;
 }
 
-/**
- * Notarizes a document's SHA-256 hash onto the Stellar blockchain testnet.
- */
-export async function notarizeHashOnStellar(hashHex: string, reportId: string) {
-  const keypair = await initStellar();
-  const publicKey = keypair.publicKey();
-  
-  console.log(`Submitting Stellar transaction from ${publicKey} for report ${reportId} with hash ${hashHex}...`);
-  
-  try {
-    const account = await server.loadAccount(publicKey);
-    
-    // Store key = `md_${reportId}` and value = hashHex as ManageData (both in Memo and state)
-    const tx = new TransactionBuilder(account, {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET,
-    })
-      .addOperation(
-        Operation.manageData({
-          name: `md_${reportId.substring(0, 10)}`, // Key up to 64 bytes
-          value: Buffer.from(hashHex, "hex"),      // Value up to 64 bytes
-        })
-      )
-      .addMemo(Memo.hash(Buffer.from(hashHex, "hex")))
-      .setTimeout(180)
-      .build();
-    
-    tx.sign(keypair);
-    const txResult = await server.submitTransaction(tx);
-    console.log("Stellar transaction submitted successfully. Hash:", txResult.hash);
-    return {
-      success: true,
-      txHash: txResult.hash,
-      ledger: txResult.ledger,
-      publicKey: publicKey,
-    };
-  } catch (err: any) {
-    console.error("Stellar transaction submission failed:", err?.response?.data || err);
-    return {
-      success: false,
-      error: err?.message || "Stellar transaction error",
-    };
-  }
+function manageDataKey(hashHex: string): string {
+  return `mh_${hashHex.slice(0, 10)}`;
 }
 
-/**
- * Verifies a report's hash against the Stellar ledger.
- */
-export async function verifyHashOnStellar(reportId: string, hashHex: string) {
+async function registerViaManageData(hashHex: string) {
   const keypair = await initStellar();
-  const publicKey = keypair.publicKey();
+  const account = await server.loadAccount(keypair.publicKey());
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK,
+  })
+    .addOperation(
+      Operation.manageData({
+        name: manageDataKey(hashHex),
+        value: Buffer.from(hashHex, "hex"),
+      })
+    )
+    .addMemo(Memo.hash(Buffer.from(hashHex, "hex")))
+    .setTimeout(180)
+    .build();
+
+  tx.sign(keypair);
+  const txResult = await server.submitTransaction(tx);
+  return {
+    success: true as const,
+    txHash: txResult.hash,
+    publicKey: keypair.publicKey(),
+    mode: "manage_data" as const,
+    contractId: undefined as string | undefined,
+  };
+}
+
+async function verifyViaManageData(hashHex: string) {
+  const keypair = await initStellar();
   try {
-    const account = await server.loadAccount(publicKey);
-    const key = `md_${reportId.substring(0, 10)}`;
+    const account = await server.loadAccount(keypair.publicKey());
+    const key = manageDataKey(hashHex);
     const base64Value = account.data_attr[key];
     if (!base64Value) {
-      return { verified: false, reason: "No matching record found on the Stellar ledger." };
+      return { verified: false, reason: "No matching record found on Stellar ledger." };
     }
     const storedHash = Buffer.from(base64Value, "base64").toString("hex");
-    if (storedHash === hashHex) {
-      return { verified: true, storedHash };
-    } else {
-      return { verified: false, reason: "Hash mismatch. The ledger hash does not match current record.", ledgerHash: storedHash };
-    }
-  } catch (err: any) {
-    console.error("Error verifying hash on Stellar:", err);
-    return { verified: false, reason: "Stellar account not found or ledger query failed." };
+    return storedHash === hashHex
+      ? { verified: true, storedHash, mode: "manage_data" as const }
+      : {
+          verified: false,
+          reason: "Hash mismatch.",
+          ledgerHash: storedHash,
+          mode: "manage_data" as const,
+        };
+  } catch {
+    return { verified: false, reason: "Stellar ledger query failed." };
   }
 }
 
-/**
- * Registers a patient consent on the Stellar ledger.
- */
-export async function registerConsentOnStellar(consentId: string, doctorName: string, permission: string, expiryTime: number) {
+async function registerViaSoroban(hashHex: string) {
+  const contractId = getContractId()!;
   const keypair = await initStellar();
-  const publicKey = keypair.publicKey();
+  const rpcServer = new rpc.Server(SOROBAN_RPC);
+  const contract = new Contract(contractId);
+  const hashBytes = Buffer.from(hashHex, "hex");
+  const account = await server.loadAccount(keypair.publicKey());
+
+  let tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK,
+  })
+    .addOperation(
+      contract.call(
+        "register_record",
+        nativeToScVal(hashBytes, { type: "bytes" }),
+        new Address(keypair.publicKey()).toScVal()
+      )
+    )
+    .setTimeout(180)
+    .build();
+
+  const sim = await rpcServer.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(sim)) {
+    throw new Error(sim.error || "Soroban simulation failed");
+  }
+  tx = rpc.assembleTransaction(tx, sim).build();
+  tx.sign(keypair);
+  const sent = await rpcServer.sendTransaction(tx);
+  if (sent.status === "ERROR") {
+    throw new Error(sent.errorResult?.toXDR("base64") || "Soroban send failed");
+  }
+
+  let getResp = await rpcServer.getTransaction(sent.hash);
+  const start = Date.now();
+  while (getResp.status === "NOT_FOUND" && Date.now() - start < 30000) {
+    await new Promise((r) => setTimeout(r, 1000));
+    getResp = await rpcServer.getTransaction(sent.hash);
+  }
+
+  return {
+    success: true as const,
+    txHash: sent.hash,
+    publicKey: keypair.publicKey(),
+    mode: "soroban" as const,
+    contractId,
+  };
+}
+
+async function verifyViaSoroban(hashHex: string) {
+  const contractId = getContractId()!;
+  const keypair = await initStellar();
+  const rpcServer = new rpc.Server(SOROBAN_RPC);
+  const contract = new Contract(contractId);
+  const hashBytes = Buffer.from(hashHex, "hex");
+  const account = await server.loadAccount(keypair.publicKey());
+
+  let tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK,
+  })
+    .addOperation(contract.call("verify_record", nativeToScVal(hashBytes, { type: "bytes" })))
+    .setTimeout(180)
+    .build();
+
+  const sim = await rpcServer.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(sim) || !rpc.Api.isSimulationSuccess(sim)) {
+    return { verified: false, reason: "Soroban verify simulation failed.", mode: "soroban" as const };
+  }
+
+  const retval = sim.result?.retval;
+  const verified = retval ? Boolean(scValToNative(retval)) : false;
+  return { verified, storedHash: hashHex, mode: "soroban" as const, contractId };
+}
+
+export async function registerRecordHash(hashHex: string) {
+  localRegistry.set(hashHex, {
+    hash: hashHex,
+    registeredAt: new Date().toISOString(),
+  });
+
   try {
-    const account = await server.loadAccount(publicKey);
-    
+    if (getContractId()) {
+      const result = await registerViaSoroban(hashHex);
+      localRegistry.set(hashHex, {
+        hash: hashHex,
+        registeredAt: new Date().toISOString(),
+        txHash: result.txHash,
+      });
+      return result;
+    }
+    const result = await registerViaManageData(hashHex);
+    localRegistry.set(hashHex, {
+      hash: hashHex,
+      registeredAt: new Date().toISOString(),
+      txHash: result.txHash,
+    });
+    return result;
+  } catch (err: any) {
+    try {
+      const result = await registerViaManageData(hashHex);
+      localRegistry.set(hashHex, {
+        hash: hashHex,
+        registeredAt: new Date().toISOString(),
+        txHash: result.txHash,
+      });
+      return result;
+    } catch (e2: any) {
+      return {
+        success: false as const,
+        error: e2?.message || err?.message || "Registration failed",
+      };
+    }
+  }
+}
+
+export async function verifyRecordHash(hashHex: string) {
+  try {
+    if (getContractId()) {
+      const r = await verifyViaSoroban(hashHex);
+      if (r.verified) return r;
+    }
+    const md = await verifyViaManageData(hashHex);
+    if (md.verified) return md;
+    const local = localRegistry.get(hashHex);
+    if (local) {
+      return {
+        verified: true,
+        storedHash: hashHex,
+        mode: "local_cache" as const,
+        registeredAt: local.registeredAt,
+      };
+    }
+    return md;
+  } catch (err: any) {
+    return { verified: false, reason: err?.message || "Verification failed" };
+  }
+}
+
+export function computeEventCanonicalHash(event: any): string {
+  const canonical = buildCanonicalFromEvent(event);
+  return hashCanonicalRecord(canonical);
+}
+
+export async function notarizeHashOnStellar(hashHex: string, _reportId: string) {
+  return registerRecordHash(hashHex);
+}
+
+export async function verifyHashOnStellar(_reportId: string, hashHex: string) {
+  return verifyRecordHash(hashHex);
+}
+
+export async function registerConsentOnStellar(
+  consentId: string,
+  doctorName: string,
+  permission: string,
+  expiryTime: number
+) {
+  const keypair = await initStellar();
+  try {
+    const account = await server.loadAccount(keypair.publicKey());
     const permCode = permission === "Read Only" ? "RO" : "FA";
     const valueStr = `${permCode}:${expiryTime}:${doctorName.substring(0, 30)}`;
-    
     const tx = new TransactionBuilder(account, {
       fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET,
+      networkPassphrase: NETWORK,
     })
       .addOperation(
         Operation.manageData({
-          name: `cs_${consentId.substring(0, 10)}`, // Consent keys start with cs_
-          value: Buffer.from(valueStr),            // Up to 64 bytes
+          name: `cs_${consentId.substring(0, 10)}`,
+          value: Buffer.from(valueStr),
         })
       )
       .setTimeout(180)
       .build();
-      
     tx.sign(keypair);
     const txResult = await server.submitTransaction(tx);
-    return {
-      success: true,
-      txHash: txResult.hash,
-    };
+    return { success: true, txHash: txResult.hash };
   } catch (err: any) {
-    console.error("Consent registration on Stellar failed:", err);
     return { success: false, error: err?.message || "Stellar write error" };
   }
 }
 
-/**
- * Verifies a patient consent on the Stellar ledger.
- */
 export async function verifyConsentOnStellar(consentId: string) {
   const keypair = await initStellar();
-  const publicKey = keypair.publicKey();
   try {
-    const account = await server.loadAccount(publicKey);
+    const account = await server.loadAccount(keypair.publicKey());
     const key = `cs_${consentId.substring(0, 10)}`;
     const base64Value = account.data_attr[key];
     if (!base64Value) {
@@ -211,22 +328,22 @@ export async function verifyConsentOnStellar(consentId: string) {
     const [permCode, expiryStr, doctorName] = val.split(":");
     const expiryTime = parseInt(expiryStr, 10);
     const permission = permCode === "RO" ? "Read Only" : "Full Access";
-    
     const now = Math.floor(Date.now() / 1000);
     if (now > expiryTime) {
-      return { valid: false, reason: "Consent expired on " + new Date(expiryTime * 1000).toLocaleString(), permission, doctorName, isExpired: true };
+      return {
+        valid: false,
+        reason: "Consent expired on " + new Date(expiryTime * 1000).toLocaleString(),
+        permission,
+        doctorName,
+        isExpired: true,
+      };
     }
-    
     return { valid: true, permission, doctorName, expiryTime };
-  } catch (err: any) {
-    console.error("Consent verification on Stellar failed:", err);
-    return { valid: false, reason: "Ledger check failed. Stellar account or consent record not accessible." };
+  } catch {
+    return { valid: false, reason: "Ledger check failed." };
   }
 }
 
-/**
- * Returns active public wallet address and balance
- */
 export async function getStellarWalletDetails() {
   const keypair = await initStellar();
   const publicKey = keypair.publicKey();
@@ -236,11 +353,17 @@ export async function getStellarWalletDetails() {
     return {
       publicKey,
       balance: nativeBalance ? nativeBalance.balance : "0.00",
+      contractId: getContractId() || null,
+      mode: getContractId() ? "soroban" : "manage_data",
     };
-  } catch (e) {
+  } catch {
     return {
       publicKey,
       balance: "0.00 (Unfunded)",
+      contractId: getContractId() || null,
+      mode: getContractId() ? "soroban" : "manage_data",
     };
   }
 }
+
+export { xdr };

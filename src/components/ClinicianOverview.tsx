@@ -34,7 +34,7 @@ export default function ClinicianOverview({ passport }: ClinicianOverviewProps) 
   const [showDoctorModal, setShowDoctorModal] = useState(false);
 
   // Generate shareable URL - uses the hash state to be instantly cross-tab compatible!
-  const shareUrl = `${window.location.origin}/#share-${passport.id}`;
+  const shareUrl = `${window.location.origin}/#emergency-${passport.id}`;
   const qrImageSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
     shareUrl
   )}&color=5a5a40`;
@@ -48,37 +48,37 @@ export default function ClinicianOverview({ passport }: ClinicianOverviewProps) 
   const generateAIHandover = async () => {
     setLoadingSynopsis(true);
     setSynopsis(null);
-
     try {
-      // Use the parsing endpoint or a custom prompt for summary extraction
-      const promptText = `Generate a dense, formal 3-sentenced clinical handover report in medical terminology for patient Aarav Sharma.
-Vitals: ${passport.bloodType}.
-Chronic Conditions: ${passport.conditions.join(", ")}.
-Allergies: ${passport.allergies.join(", ")}.
-Prescriptions: ${passport.medications.join(", ")}.
-Medical Timeline Events: ${passport.timeline
-        .map((e) => `${e.date}: ${e.title} at ${e.facility} (${e.findings})`)
-        .join("; ")}`;
-
-      const response = await fetch("/api/records/parse", {
+      const response = await fetch("/api/bindu/doctor-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: `[SUMMARIZE PROTOCOL]:\n${promptText}\nPlease organize the outcome into findings. Use professional clinical vocab, highlighting high-severity items first.`,
-        }),
+        body: JSON.stringify({ passportId: passport.id }),
       });
-
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error("Failed to compile clinician synopsis.");
+        throw new Error(data.error || "Doctor brief unavailable");
       }
-
-      const result = await response.json();
-      setSynopsis(result.findings);
-    } catch (err) {
-      console.error(err);
-      // Fallback
+      const brief = data.brief;
+      const trendLines = (brief.trends || [])
+        .filter((t: any) => t.direction !== "insufficient_data")
+        .map(
+          (t: any) =>
+            `${t.name}: ${t.points.map((p: any) => p.value).join(" → ")} ${t.unit}`
+        )
+        .join("; ");
       setSynopsis(
-        `30-Second Clinical Overview: Patient presented exhibits chronic hypertension controlled under Lisinopril 10mg daily with no cardiovascular rhythm anomalies on recent check-ups. Highlight penicillin allergy and secondary grade-1 Left Knee ACL sprain under active physical rehabilitation. Metabolic markers, liver enzymes, and renal indices are fully physiologic.`
+        [
+          `Patient ${brief.patientName}. Conditions: ${(brief.knownConditions || []).join(", ") || "none"}.`,
+          `Medications: ${(brief.currentMedications || []).join("; ") || "none"}. Allergies: ${(brief.allergies || []).join(", ") || "none"}.`,
+          trendLines
+            ? `Recorded trends: ${trendLines}.`
+            : "No multi-point numeric trends recorded yet.",
+        ].join(" ")
+      );
+    } catch (err: any) {
+      setSynopsis(
+        err?.message ||
+          "AI analysis is temporarily unavailable. Your medical record has not been modified."
       );
     } finally {
       setLoadingSynopsis(false);
@@ -93,7 +93,7 @@ Medical Timeline Events: ${passport.timeline
           <QrCode className="w-5 h-5 text-natural-olive" /> Instant Share Passport Setup
         </h3>
         <p className="text-xs text-natural-text/75 mb-4 leading-relaxed">
-          The QR code instantly shares your complete health summary with any doctor during diagnostics or emergencies. No hospital database login required.
+          The QR opens the Emergency Health Passport view (blood group, allergies, conditions, meds, contact) — not the full timeline.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-6 bg-[#e8ede0]/20 border border-[#e8ede0] rounded-[24px] p-5 w-full">

@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+.stellar-config.json
+.local/
+planning/
+docs/internal/
+*.canvas.data.json
