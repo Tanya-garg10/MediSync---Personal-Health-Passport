@@ -19,6 +19,9 @@ import {
   HelpCircle,
   X,
   SlidersHorizontal,
+  Shield,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { TimelineEvent, RecordType } from "../types";
 
@@ -40,6 +43,8 @@ export default function TimelineWidget({ events, passportId, onDeleteEvent, onRe
   const [notarizingId, setNotarizingId] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [verifyPanel, setVerifyPanel] = useState<Record<string, any>>({});
+  const [tamperedEvents, setTamperedEvents] = useState<Set<string>>(new Set());
+  const [simulatingTamper, setSimulatingTamper] = useState<string | null>(null);
 
   const handleVerifyOnStellar = async (eventId: string) => {
     setNotarizingId(eventId);
@@ -98,6 +103,37 @@ export default function TimelineWidget({ events, passportId, onDeleteEvent, onRe
 
   const shareVerified = (eventId: string) => {
     window.location.hash = `verify-${passportId}-${eventId}`;
+  };
+
+  const simulateTampering = (eventId: string) => {
+    setSimulatingTamper(eventId);
+    setTimeout(() => {
+      setTamperedEvents(prev => new Set(prev).add(eventId));
+      setSimulatingTamper(null);
+      // Update verification panel to show tampering detected
+      setVerifyPanel(prev => ({
+        ...prev,
+        [eventId]: {
+          authentic: false,
+          reason: "Tampering detected: Current record does not match Stellar blockchain hash",
+          tampered: true,
+        }
+      }));
+    }, 1000);
+  };
+
+  const restoreOriginal = (eventId: string) => {
+    setTamperedEvents(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(eventId);
+      return newSet;
+    });
+    // Reset verification panel
+    setVerifyPanel(prev => {
+      const newPanel = { ...prev };
+      delete newPanel[eventId];
+      return newPanel;
+    });
   };
 
   // Sorting timeline events from latest to oldest
@@ -452,6 +488,12 @@ export default function TimelineWidget({ events, passportId, onDeleteEvent, onRe
 
                     <div className="flex items-center gap-2 shrink-0">
                       {getSeverityBadge(evt.severity)}
+                      {tamperedEvents.has(evt.id) && (
+                        <span className="flex items-center gap-1 text-red-800 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200 text-[10px] font-bold font-sans">
+                          <AlertTriangle className="w-3 h-3" />
+                          Tampered
+                        </span>
+                      )}
                       <button
                         onClick={() => toggleExpand(evt.id)}
                         className="p-1 rounded-lg text-slate-400 hover:text-[#33332d] hover:bg-[#e8ede0] transition-colors"
@@ -486,6 +528,7 @@ export default function TimelineWidget({ events, passportId, onDeleteEvent, onRe
                       {evt.stellarStatus === "verified" ? (
                         <>
                           <span className="flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 text-[10px] font-bold font-sans">
+                            <Shield className="w-3 h-3" />
                             Verified on Stellar
                           </span>
                           <button
@@ -493,8 +536,25 @@ export default function TimelineWidget({ events, passportId, onDeleteEvent, onRe
                             disabled={verifyingId === evt.id}
                             className="px-2.5 py-1 rounded-lg bg-natural-sage/20 border border-natural-sage text-[10px] font-bold font-sans cursor-pointer text-natural-olive"
                           >
-                            {verifyingId === evt.id ? "Checking…" : "Open Verification"}
+                            {verifyingId === evt.id ? "Checking…" : "Verify Integrity"}
                           </button>
+                          {tamperedEvents.has(evt.id) ? (
+                            <button
+                              onClick={() => restoreOriginal(evt.id)}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-bold font-sans cursor-pointer flex items-center gap-1"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              Restore Original
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => simulateTampering(evt.id)}
+                              disabled={simulatingTamper === evt.id}
+                              className="px-2.5 py-1 rounded-lg bg-red-100 text-red-700 text-[10px] font-bold font-sans cursor-pointer flex items-center gap-1"
+                            >
+                              {simulatingTamper === evt.id ? "Simulating…" : <><AlertTriangle className="w-3 h-3" /> Simulate Tamper</>}
+                            </button>
+                          )}
                           <button
                             onClick={() => shareVerified(evt.id)}
                             className="px-2.5 py-1 rounded-lg bg-natural-olive text-white text-[10px] font-bold font-sans cursor-pointer"
@@ -526,26 +586,45 @@ export default function TimelineWidget({ events, passportId, onDeleteEvent, onRe
 
                   {verifyPanel[evt.id] && (
                     <div
-                      className={`mt-2.5 p-3 rounded-xl border text-xs font-sans ${
+                      className={`mt-2.5 p-4 rounded-xl border text-xs font-sans ${
                         verifyPanel[evt.id].authentic
                           ? "bg-emerald-50 border-emerald-100 text-emerald-950"
                           : "bg-red-50 border-red-100 text-red-950"
                       }`}
                     >
-                      <p className="font-bold">
+                      <div className="flex items-center gap-2 mb-2">
+                        {verifyPanel[evt.id].authentic ? (
+                          <Shield className="w-4 h-4 text-emerald-600" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-red-600" />
+                        )}
+                        <p className="font-bold text-sm">
+                          {verifyPanel[evt.id].authentic
+                            ? "Record Integrity — Authentic"
+                            : verifyPanel[evt.id].tampered
+                            ? "Tampering Detected"
+                            : "Verification Failed"}
+                        </p>
+                      </div>
+                      <p className="text-[11px] mt-1 opacity-90 leading-relaxed">
                         {verifyPanel[evt.id].authentic
-                          ? "Record Verification — Authentic"
-                          : "Verification Failed"}
-                      </p>
-                      <p className="text-[11px] mt-1 opacity-90">
-                        {verifyPanel[evt.id].authentic
-                          ? `Network: ${verifyPanel[evt.id].network || "Stellar Testnet"} · Hash: ${(verifyPanel[evt.id].hash || "").slice(0, 12)}…`
+                          ? `This record matches the cryptographic hash registered on ${verifyPanel[evt.id].network || "Stellar Testnet"}. No changes detected.`
+                          : verifyPanel[evt.id].tampered
+                          ? "The current record does not match the hash registered on Stellar blockchain. Unauthorized modification detected."
                           : verifyPanel[evt.id].reason ||
                             "The record does not match its registered cryptographic proof."}
                       </p>
+                      {verifyPanel[evt.id].hash && (
+                        <div className="mt-2 p-2 bg-white/50 rounded-lg">
+                          <p className="text-[9px] font-bold uppercase opacity-70">SHA-256 Hash</p>
+                          <p className="font-mono text-[10px] break-all mt-1">
+                            {verifyPanel[evt.id].hash}
+                          </p>
+                        </div>
+                      )}
                       {verifyPanel[evt.id].contractId && (
-                        <p className="text-[10px] mt-1 font-mono">
-                          Contract: {verifyPanel[evt.id].contractId}
+                        <p className="text-[10px] mt-2 font-mono opacity-80">
+                          Stellar Contract: {verifyPanel[evt.id].contractId.slice(0, 16)}…
                         </p>
                       )}
                     </div>

@@ -126,7 +126,7 @@ export default function DocumentUploader({ passportId, onPassportUpdated }: Docu
   const busy = extracting || structuring || confirming;
 
   return (
-    <div className="bg-white rounded-[32px] border border-natural-sage p-6 shadow-sm space-y-4">
+    <div className="bg-card-bg rounded-[32px] border border-natural-sage p-6 shadow-sm space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-serif text-lg text-natural-dark">Upload Medical Record</h3>
@@ -170,7 +170,7 @@ export default function DocumentUploader({ passportId, onPassportUpdated }: Docu
       >
         <Upload className="w-8 h-8 mx-auto text-natural-olive/60 mb-3" />
         <p className="text-xs text-stone-600 mb-3">Drop a text-based PDF here</p>
-        <label className="inline-flex items-center gap-2 cursor-pointer bg-natural-olive text-white text-xs font-bold px-4 py-2.5 rounded-xl">
+        <label className="inline-flex items-center gap-2 cursor-pointer bg-natural-olive text-natural-bg text-xs font-bold px-4 py-2.5 rounded-xl">
           <FileText className="w-4 h-4" />
           Select PDF
           <input
@@ -275,7 +275,7 @@ export default function DocumentUploader({ passportId, onPassportUpdated }: Docu
             View extracted text
           </button>
           {showRaw && (
-            <pre className="text-[10px] whitespace-pre-wrap bg-stone-50 rounded-xl p-3 max-h-40 overflow-auto border border-stone-100">
+            <pre className="text-[10px] whitespace-pre-wrap bg-natural-bg/50 rounded-xl p-3 max-h-40 overflow-auto border border-natural-sage/50">
               {rawText}
             </pre>
           )}
@@ -292,7 +292,7 @@ export default function DocumentUploader({ passportId, onPassportUpdated }: Docu
               type="button"
               onClick={handleConfirm}
               disabled={confirming}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-natural-olive text-white"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-natural-olive text-natural-bg"
             >
               Confirm & Add
             </button>

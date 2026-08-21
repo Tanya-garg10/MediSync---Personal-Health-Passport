@@ -162,12 +162,12 @@ const demoPassport: PassportData = {
 passportStore.set(DEMO_GUID, demoPassport);
 
 app.get("/api/health", async (_req, res) => {
-  const corsair = await getCorsairStatus();
+  const corsairStatus = await getCorsairStatus();
   res.json({
     status: "ok",
     ai: hasApiKey && ai ? "enabled" : "unavailable",
     stellarMode: getContractId() ? "soroban" : "manage_data",
-    corsair,
+    corsair: corsairStatus,
   });
 });
 
@@ -444,6 +444,40 @@ app.get("/api/corsair/status", async (_req, res) => {
   res.json(await getCorsairStatus());
 });
 
+// Corsair OAuth callback handler
+app.get("/api/corsair/callback", async (req, res) => {
+  try {
+    const { createCorsair } = await import("corsair");
+    const { googlecalendar } = await import("@corsair-dev/googlecalendar");
+    
+    const db = {
+      query: async (sql: string, params?: any[]) => [],
+      connect: async () => ({ 
+        close: async () => {},
+        query: async (sql: string, params?: any[]) => []
+      }),
+    };
+    
+    const corsairClient = createCorsair({
+      multiTenancy: false,
+      kek: process.env.CORSAIR_KEK!,
+      database: db as any,
+      plugins: [googlecalendar({
+        clientId: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/corsair/callback',
+      })],
+    });
+    
+    const { toExpressHandler } = await import("corsair");
+    const handler = toExpressHandler(corsairClient, { basePath: "/api/corsair" });
+    return handler(req, res, () => {});
+  } catch (err) {
+    console.error("Corsair callback error:", err);
+    res.status(500).json({ error: "Corsair callback error" });
+  }
+});
+
 app.post("/api/records/:passportId/consent", async (req, res) => {
   const passport = passportStore.get(req.params.passportId);
   if (!passport) return res.status(404).json({ error: "Passport not found" });
@@ -534,8 +568,9 @@ async function start() {
     });
   }
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`MediSync listening on http://localhost:${PORT}`);
+    console.log(`MediSync also accessible on http://192.168.1.15:${PORT}`);
   });
 }
 

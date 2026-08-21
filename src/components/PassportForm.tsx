@@ -108,7 +108,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
   };
 
   return (
-    <div className="bg-white rounded-[32px] border border-natural-sage shadow-sm overflow-hidden flex flex-col">
+    <div className="bg-card-bg rounded-[32px] border border-natural-sage shadow-sm overflow-hidden flex flex-col">
       {/* Clinician Alert Banner */}
       <div className="bg-natural-olive text-white px-6 py-5 flex items-center justify-between gap-4">
         <div>
@@ -139,11 +139,11 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
       </div>
 
       {/* Tabs list */}
-      <div className="flex border-b border-natural-sage/50 bg-[#e8ede0]/20 p-2.5 gap-1.5 text-xs">
+      <div className="flex border-b border-natural-sage/50 bg-natural-sage/20 p-2.5 gap-1.5 text-xs">
         <button
           onClick={() => setActiveTab("vitals")}
           className={`flex-1 py-2 rounded-xl font-medium transition-all ${
-            activeTab === "vitals" ? "bg-white text-natural-dark font-bold shadow-xs border border-natural-sage/40" : "text-[#5a5a40]/70 hover:text-natural-dark hover:bg-white/40"
+            activeTab === "vitals" ? "bg-card-bg text-natural-dark font-bold shadow-xs border border-natural-sage/40" : "text-natural-olive/70 hover:text-natural-dark hover:bg-card-bg/40"
           }`}
         >
           Vitals & Emergency
@@ -151,7 +151,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
         <button
           onClick={() => setActiveTab("allergies")}
           className={`flex-1 py-2 rounded-xl font-medium transition-all ${
-            activeTab === "allergies" ? "bg-white text-natural-dark font-bold shadow-xs border border-natural-sage/40" : "text-[#5a5a40]/70 hover:text-natural-dark hover:bg-white/40"
+            activeTab === "allergies" ? "bg-card-bg text-natural-dark font-bold shadow-xs border border-natural-sage/40" : "text-natural-olive/70 hover:text-natural-dark hover:bg-card-bg/40"
           }`}
         >
           Allergies ({allergies.length})
@@ -159,7 +159,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
         <button
           onClick={() => setActiveTab("conditions")}
           className={`flex-1 py-2 rounded-xl font-medium transition-all ${
-            activeTab === "conditions" ? "bg-white text-natural-dark font-bold shadow-xs border border-natural-sage/40" : "text-[#5a5a40]/70 hover:text-natural-dark hover:bg-white/40"
+            activeTab === "conditions" ? "bg-card-bg text-natural-dark font-bold shadow-xs border border-natural-sage/40" : "text-natural-olive/70 hover:text-natural-dark hover:bg-card-bg/40"
           }`}
         >
           Conditions ({conditions.length})
@@ -167,7 +167,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
         <button
           onClick={() => setActiveTab("meds")}
           className={`flex-1 py-2 rounded-xl font-medium transition-all ${
-            activeTab === "meds" ? "bg-white text-natural-dark font-bold shadow-xs border border-natural-sage/40" : "text-[#5a5a40]/70 hover:text-natural-dark hover:bg-white/40"
+            activeTab === "meds" ? "bg-card-bg text-natural-dark font-bold shadow-xs border border-natural-sage/40" : "text-natural-olive/70 hover:text-natural-dark hover:bg-card-bg/40"
           }`}
         >
           Meds ({medications.length})
@@ -178,7 +178,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
       <div className="p-6 flex-1 text-xs text-slate-700">
         {activeTab === "vitals" && (
           <div className="space-y-5 animate-fade-in">
-            <h4 className="font-serif text-[#1a1a10] font-bold flex items-center gap-1.5 text-sm mb-3 border-b border-natural-sage pb-2">
+            <h4 className="font-serif text-natural-dark font-bold flex items-center gap-1.5 text-sm mb-3 border-b border-natural-sage pb-2">
               <ShieldAlert className="w-4 h-4 text-natural-olive" /> Vitals Identification
             </h4>
 
@@ -230,7 +230,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
               </select>
             </div>
 
-            <h4 className="font-serif text-[#1a1a10] font-bold flex items-center gap-1.5 text-sm pt-2 border-b border-natural-sage pb-2">
+            <h4 className="font-serif text-natural-dark font-bold flex items-center gap-1.5 text-sm pt-2 border-b border-natural-sage pb-2">
               <Truck className="w-4 h-4 text-natural-olive" /> Emergency Response Contact
             </h4>
 
@@ -277,7 +277,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
 
         {activeTab === "allergies" && (
           <div className="space-y-4 animate-fade-in">
-            <h4 className="font-serif text-[#1a1a10] font-bold flex items-center gap-1.5 text-sm mb-1">
+            <h4 className="font-serif text-natural-dark font-bold flex items-center gap-1.5 text-sm mb-1">
               <ShieldAlert className="w-4.5 h-4.5 text-red-700" /> Drug & Food Allergies
             </h4>
             <p className="text-[11px] text-natural-text/70 mt-0.5 leading-relaxed">
@@ -326,7 +326,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
 
         {activeTab === "conditions" && (
           <div className="space-y-4 animate-fade-in">
-            <h4 className="font-serif text-[#1a1a10] font-bold flex items-center gap-1.5 text-sm mb-1">
+            <h4 className="font-serif text-natural-dark font-bold flex items-center gap-1.5 text-sm mb-1">
               <Heart className="w-4.5 h-4.5 text-natural-olive" /> Chronic Conditions & Disorders
             </h4>
             <p className="text-[11px] text-natural-text/70 mt-0.5 leading-relaxed">
@@ -375,7 +375,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
 
         {activeTab === "meds" && (
           <div className="space-y-4 animate-fade-in">
-            <h4 className="font-serif text-[#1a1a10] font-bold flex items-center gap-1.5 text-sm mb-1">
+            <h4 className="font-serif text-natural-dark font-bold flex items-center gap-1.5 text-sm mb-1">
               <ShieldAlert className="w-4.5 h-4.5 text-natural-olive" /> Active Prescriptions & Medications
             </h4>
             <p className="text-[11px] text-natural-text/70 mt-0.5 leading-relaxed">
@@ -424,7 +424,7 @@ export default function PassportForm({ passport, onSave }: PassportFormProps) {
       </div>
 
       {/* Save status notification footer */}
-      <div className="bg-[#fdfcf8] border-t border-natural-sage px-6 py-3.5 flex items-center justify-between text-[10px] uppercase font-mono font-semibold text-natural-olive/60">
+      <div className="bg-natural-bg border-t border-natural-sage px-6 py-3.5 flex items-center justify-between text-[10px] uppercase font-mono font-semibold text-natural-olive/60">
         <div className="flex items-center gap-1.5">
           <Calendar className="w-3.5 h-3.5" />
           <span>Last synchronized: {new Date(passport.updatedAt).toLocaleTimeString()}</span>

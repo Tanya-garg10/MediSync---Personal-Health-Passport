@@ -20,13 +20,48 @@ export async function initCorsair(): Promise<boolean> {
     corsairInitError = "CORSAIR_KEK not set — configure Corsair or drop this track";
     return false;
   }
+  
+  // Check if Google OAuth credentials are configured
+  console.log("Checking Google OAuth credentials:", {
+    clientId: process.env.GOOGLE_CLIENT_ID ? "set" : "not set",
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET ? "set" : "not set",
+    redirectUri: process.env.GOOGLE_REDIRECT_URI ? "set" : "not set"
+  });
+  
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    corsairInitError = "Google OAuth credentials not set. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env";
+    return false;
+  }
+  
   try {
     const { createCorsair } = await import("corsair");
     const { googlecalendar } = await import("@corsair-dev/googlecalendar");
+    
+    // Create a simple database mock that meets the interface requirements
+    const db = {
+      query: async (sql: string, params?: any[]) => {
+        return [];
+      },
+      connect: async () => {
+        return { 
+          close: async () => {},
+          query: async (sql: string, params?: any[]) => []
+        };
+      }
+    };
+    
+    // Configure Google Calendar plugin with OAuth credentials
+    const googleCalendarPlugin = googlecalendar({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/corsair/callback',
+    });
+    
     corsairClient = createCorsair({
       multiTenancy: false,
       kek: process.env.CORSAIR_KEK!,
-      plugins: [googlecalendar()],
+      database: db as any,
+      plugins: [googleCalendarPlugin],
     });
     corsairInitError = null;
     return true;
@@ -38,6 +73,14 @@ export async function initCorsair(): Promise<boolean> {
 }
 
 export async function addFollowUpToCalendar(followUp: FollowUpSuggestion, patientName: string) {
+  // Check if Google OAuth credentials are available
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return {
+      success: false as const,
+      error: "Google OAuth credentials not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env",
+    };
+  }
+
   if (!corsairClient) {
     const ok = await initCorsair();
     if (!ok || !corsairClient) {

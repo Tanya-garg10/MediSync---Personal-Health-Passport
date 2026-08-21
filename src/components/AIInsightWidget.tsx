@@ -64,31 +64,29 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
 
   const addToCalendar = async (index: number) => {
     setCalendarMsg(null);
-    try {
-      const res = await fetch("/api/corsair/calendar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passportId: passport.id, followUpIndex: index }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setCalendarMsg(data.error || "Corsair calendar unavailable");
-        return;
-      }
-      setCalendarMsg("Follow-up created in Google Calendar via Corsair.");
-    } catch (e: any) {
-      setCalendarMsg(e?.message || "Corsair request failed");
-    }
+    const followUp = passport.pendingFollowUps?.[index];
+    if (!followUp) return;
+
+    // Generate Google Calendar link as fallback
+    const startDate = new Date(followUp.recommendedDate + "T09:00:00");
+    const endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
+    
+    const formatDate = (date: Date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=MediSync+Follow-up+${encodeURIComponent(passport.fullName)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent(followUp.note)}`;
+    
+    window.open(calendarUrl, '_blank');
+    setCalendarMsg("Opening Google Calendar...");
   };
 
   return (
-    <div className="bg-white rounded-[32px] border border-natural-sage shadow-sm overflow-hidden" id="bindu-agent-hub">
+    <div className="bg-natural-dark text-natural-bg rounded-[32px] border border-natural-sage shadow-sm overflow-hidden" id="bindu-agent-hub">
       <div className="px-6 py-5 border-b border-natural-sage/50 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-natural-olive">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-natural-sage">
             Bindu Hub
           </p>
-          <h3 className="font-serif text-lg text-natural-dark">Multi-Agent Health Intelligence</h3>
+          <h3 className="font-serif text-lg text-natural-bg">Multi-Agent Health Intelligence</h3>
         </div>
         <button
           type="button"
@@ -115,8 +113,8 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
             onClick={() => setTab(id)}
             className={`px-4 py-2 text-xs font-semibold rounded-t-xl ${
               tab === id
-                ? "bg-natural-sage/50 text-natural-dark"
-                : "text-stone-500 hover:text-natural-dark"
+                ? "bg-natural-sage/20 text-natural-bg"
+                : "text-natural-bg/50 hover:text-natural-bg"
             }`}
           >
             {label}
@@ -133,7 +131,7 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
         )}
 
         {steps.length > 0 && (
-          <div className="space-y-2 rounded-2xl border border-natural-sage p-4 bg-natural-bg/30">
+          <div className="space-y-2 rounded-2xl border border-natural-sage/30 p-4 bg-natural-sage/10 text-natural-bg">
             {steps.map((s, i) => (
               <div key={i} className="flex items-start gap-2 text-xs">
                 {s.status === "done" ? (
@@ -141,7 +139,7 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
                 ) : s.status === "running" ? (
                   <Loader2 className="w-4 h-4 animate-spin text-natural-olive" />
                 ) : (
-                  <span className="w-4 h-4 rounded-full border border-stone-300" />
+                  <span className="w-4 h-4 rounded-full border border-natural-sage/50" />
                 )}
                 <span>
                   <strong className="capitalize">{s.agent}</strong> — {s.message}
@@ -157,7 +155,7 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
               type="button"
               onClick={loadInsights}
               disabled={loading}
-              className="text-xs font-bold px-3 py-2 rounded-xl border border-natural-olive/30 text-natural-olive"
+              className="text-xs font-bold px-3 py-2 rounded-xl border border-natural-sage/30 text-natural-sage hover:bg-natural-sage/10"
             >
               {loading ? "Running Insight Agent…" : "Run Insight Agent"}
             </button>
@@ -175,7 +173,7 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
                     <button
                       type="button"
                       onClick={() => addToCalendar(i)}
-                      className="inline-flex items-center gap-1 font-bold text-natural-olive"
+                      className="inline-flex items-center gap-1 font-bold text-natural-bg hover:text-white"
                     >
                       <CalendarPlus className="w-3.5 h-3.5" />
                       Add to Calendar
@@ -187,22 +185,22 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
             )}
 
             {trends.length === 0 ? (
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-natural-bg/60">
                 Evidence-backed trends appear here from recorded numeric observations only.
               </p>
             ) : (
               trends.map((t, i) => (
-                <div key={i} className="rounded-2xl border border-natural-sage p-4">
-                  <p className="font-serif text-sm text-natural-dark">
-                    {t.name} {t.unit && <span className="text-stone-400">({t.unit})</span>}
+                <div key={i} className="rounded-2xl border border-natural-sage/30 p-4 bg-natural-sage/5">
+                  <p className="font-serif text-sm text-natural-bg">
+                    {t.name} {t.unit && <span className="text-natural-bg/50">({t.unit})</span>}
                   </p>
-                  <p className="text-xs text-stone-600 mt-1">{t.summary}</p>
+                  <p className="text-xs text-natural-bg/80 mt-1">{t.summary}</p>
                   {t.points.length > 0 && (
-                    <p className="text-[11px] font-mono text-natural-olive mt-2">
+                    <p className="text-[11px] font-mono text-natural-sage mt-2">
                       {t.points.map((p) => `${p.date}: ${p.value}`).join(" · ")}
                     </p>
                   )}
-                  <p className="text-[10px] text-stone-400 mt-2">
+                  <p className="text-[10px] text-natural-bg/40 mt-2">
                     Sources: {t.sources.join(", ") || "—"}
                   </p>
                 </div>
@@ -214,24 +212,24 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
         {tab === "brief" && (
           <div className="space-y-4">
             {!brief && !loading && (
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-natural-bg/60">
                 Click Prepare Doctor Visit to generate an evidence-backed clinician brief.
               </p>
             )}
             {brief && (
               <div className="space-y-4 text-xs">
                 <div>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-natural-olive">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-natural-sage">
                     Doctor Visit Brief
                   </p>
-                  <h4 className="font-serif text-xl text-natural-dark mt-1">{brief.patientName}</h4>
+                  <h4 className="font-serif text-xl text-natural-bg mt-1">{brief.patientName}</h4>
                 </div>
                 <section>
-                  <h5 className="font-bold text-natural-dark mb-1">Known Conditions</h5>
+                  <h5 className="font-bold text-natural-bg mb-1">Known Conditions</h5>
                   <p>{brief.knownConditions.join(" · ") || "None recorded"}</p>
                 </section>
                 <section>
-                  <h5 className="font-bold text-natural-dark mb-1">Current Medication</h5>
+                  <h5 className="font-bold text-natural-bg mb-1">Current Medication</h5>
                   <ul className="list-disc pl-4">
                     {brief.currentMedications.map((m, i) => (
                       <li key={i}>{m}</li>
@@ -239,7 +237,7 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
                   </ul>
                 </section>
                 <section>
-                  <h5 className="font-bold text-natural-dark mb-1">Recent Clinical Events</h5>
+                  <h5 className="font-bold text-natural-bg mb-1">Recent Clinical Events</h5>
                   <ul className="space-y-1">
                     {brief.recentEvents.map((e, i) => (
                       <li key={i}>
@@ -249,7 +247,7 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
                   </ul>
                 </section>
                 <section>
-                  <h5 className="font-bold text-natural-dark mb-1">Recorded Trends</h5>
+                  <h5 className="font-bold text-natural-bg mb-1">Recorded Trends</h5>
                   {brief.trends
                     .filter((t) => t.direction !== "insufficient_data")
                     .map((t, i) => (
@@ -259,7 +257,7 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
                     ))}
                 </section>
                 <section>
-                  <h5 className="font-bold text-natural-dark mb-1">Latest Results</h5>
+                  <h5 className="font-bold text-natural-bg mb-1">Latest Results</h5>
                   <ul className="space-y-1">
                     {brief.latestResults.map((r, i) => (
                       <li key={i}>
@@ -269,10 +267,10 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
                   </ul>
                 </section>
                 <section>
-                  <h5 className="font-bold text-natural-dark mb-1">Allergies</h5>
+                  <h5 className="font-bold text-natural-bg mb-1">Allergies</h5>
                   <p>{brief.allergies.join(", ") || "None recorded"}</p>
                 </section>
-                <p className="text-[10px] text-stone-400">
+                <p className="text-[10px] text-natural-bg/40">
                   Sources: {brief.sources.length} medical records · Last updated{" "}
                   {new Date(brief.lastUpdated).toLocaleDateString()}
                 </p>
@@ -282,37 +280,37 @@ export default function AIInsightWidget({ passport }: AIInsightWidgetProps) {
         )}
 
         {tab === "emergency" && (
-          <div className="rounded-2xl bg-[#1a1a10] text-white p-5 space-y-3">
-            <p className="text-[10px] font-mono uppercase tracking-wider text-rose-300">
+          <div className="rounded-2xl bg-natural-bg text-natural-dark p-5 space-y-3">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-rose-500">
               Emergency Health Passport
             </p>
             <h4 className="font-serif text-2xl">{passport.fullName}</h4>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <p className="text-rose-300/80 text-[10px] uppercase">Blood Group</p>
+                <p className="text-rose-500/80 text-[10px] uppercase">Blood Group</p>
                 <p className="font-bold">{passport.bloodType}</p>
               </div>
               <div>
-                <p className="text-rose-300/80 text-[10px] uppercase">Allergies</p>
+                <p className="text-rose-500/80 text-[10px] uppercase">Allergies</p>
                 <p className="font-bold">{passport.allergies.join(", ") || "—"}</p>
               </div>
               <div>
-                <p className="text-rose-300/80 text-[10px] uppercase">Conditions</p>
+                <p className="text-rose-500/80 text-[10px] uppercase">Conditions</p>
                 <p className="font-bold">{passport.conditions.join(", ") || "—"}</p>
               </div>
               <div>
-                <p className="text-rose-300/80 text-[10px] uppercase">Medications</p>
+                <p className="text-rose-500/80 text-[10px] uppercase">Medications</p>
                 <p className="font-bold">{passport.medications.slice(0, 3).join(", ") || "—"}</p>
               </div>
             </div>
-            <div className="pt-2 border-t border-white/10 text-xs">
-              <p className="text-rose-300/80 text-[10px] uppercase">Emergency Contact</p>
+            <div className="pt-2 border-t border-natural-sage text-xs">
+              <p className="text-rose-500/80 text-[10px] uppercase">Emergency Contact</p>
               <p className="font-bold">{passport.emergencyContact.name}</p>
-              <p className="font-mono text-rose-100">{passport.emergencyContact.phone}</p>
+              <p className="font-mono text-rose-700">{passport.emergencyContact.phone}</p>
             </div>
             <a
               href={`#emergency-${passport.id}`}
-              className="inline-block text-[10px] font-bold uppercase tracking-wider text-rose-200 underline"
+              className="inline-block text-[10px] font-bold uppercase tracking-wider text-rose-600 underline"
             >
               Open Emergency QR View
             </a>

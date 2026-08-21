@@ -6,6 +6,11 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
+    css: {
+      postcss: {
+        // Disable PostCSS to avoid conflicts with global config
+      },
+    },
     resolve: {
       alias: {
         'react': path.resolve(__dirname, 'node_modules/react'),
