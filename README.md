@@ -14,8 +14,6 @@ Upload medical PDFs, structure them with AI, build a longitudinal timeline, prep
 
 </div>
 
----
-
 ## ✨ Key Features
 
 ### 🚀 High-Impact Demo Features
@@ -30,8 +28,6 @@ Upload medical PDFs, structure them with AI, build a longitudinal timeline, prep
 - **📅 Calendar Integration** — Add follow-ups to Google Calendar automatically
 - **📄 PDF Export** — Generate professional medical passport PDFs
 
----
-
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 19, TypeScript, Tailwind CSS 4, Vite
@@ -41,8 +37,6 @@ Upload medical PDFs, structure them with AI, build a longitudinal timeline, prep
 - **Calendar**: Corsair + `@corsair-dev/googlecalendar`
 - **PDF Generation**: jsPDF
 - **QR Codes**: qrcode.react
-
----
 
 ## 🚀 Quick Start
 
@@ -101,8 +95,6 @@ npm run build
 npm start
 ```
 
----
-
 ## 🎬 Demo Flow
 
 ### Complete Demo Experience
@@ -115,8 +107,6 @@ npm start
 6. **📱 Share QR** — Share Verified Record QR
 7. **🆘 Emergency Access** — Click "EMERGENCY QR" button → Scan QR code → View critical info
 8. **📅 Calendar** — Follow-up chip → Add to Calendar
-
----
 
 ## 🔗 Blockchain Integration
 
@@ -138,8 +128,6 @@ Functions:
 
 Deploy to Stellar Testnet, then set `MEDISYNC_CONTRACT_ID`. Without it, MediSync still registers hashes on Testnet via account ManageData.
 
----
-
 ## 📅 Calendar Integration
 
 Configure with Corsair CLI:
@@ -150,35 +138,11 @@ corsair setup --plugin=googlecalendar
 
 Set `CORSAIR_KEK` in `.env`. If unset, the Calendar action returns a clear configuration error.
 
----
-
 ## 🌐 Network Configuration
 
 For QR code scanning from mobile devices:
 
 The server is configured to listen on all network interfaces (`0.0.0.0`). Update the QR code URLs in `src/App.tsx` to use your network IP instead of `localhost`.
-
----
-
-## 🚀 Deployment
-
-### Render
-
-Use `render.yaml` or connect the repo as a single Node web service:
-
-```bash
-npm run build
-npm start
-```
-
-### Other Platforms
-
-- Vercel
-- Railway
-- DigitalOcean App Platform
-- AWS Elastic Beanstalk
-
----
 
 ## 📋 Project Structure
 
@@ -198,27 +162,19 @@ medisync/
 └── package.json         # Dependencies
 ```
 
----
-
 ## ⚠️ Important Notes
 
 - **Demo MVP**: This is a demonstration project. Do not upload real sensitive medical information.
 - **Testnet Only**: Currently uses Stellar Testnet for blockchain operations.
 - **Local Development**: QR codes use localhost by default; update for network access.
 
----
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
----
-
 ## 📄 License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
----
 
 ## 🙏 Acknowledgments
 
@@ -226,8 +182,6 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - Google for Gemini AI
 - Corsair for calendar integration
 - The open-source community
-
----
 
 <div align="center">
 
