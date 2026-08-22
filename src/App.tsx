@@ -429,7 +429,7 @@ export default function App() {
                 alt="Emergency QR"
                 className="w-40 h-40"
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                  `http://localhost:3000/#emergency-demo`
+                  `${window.location.origin}/#emergency-${passportId}`
                 )}`}
               />
             </div>

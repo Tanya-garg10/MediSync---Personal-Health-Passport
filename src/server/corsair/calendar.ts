@@ -54,7 +54,7 @@ export async function initCorsair(): Promise<boolean> {
     const googleCalendarPlugin = googlecalendar({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/corsair/callback',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `${process.env.APP_URL || 'http://localhost:3000'}/api/corsair/callback`,
     });
     
     corsairClient = createCorsair({

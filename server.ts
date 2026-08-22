@@ -465,7 +465,7 @@ app.get("/api/corsair/callback", async (req, res) => {
       plugins: [googlecalendar({
         clientId: process.env.GOOGLE_CLIENT_ID!,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/corsair/callback',
+        redirectUri: process.env.GOOGLE_REDIRECT_URI || `${process.env.APP_URL || 'http://localhost:3000'}/api/corsair/callback`,
       })],
     });
     
@@ -570,7 +570,7 @@ async function start() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`MediSync listening on http://localhost:${PORT}`);
-    console.log(`MediSync also accessible on http://192.168.1.15:${PORT}`);
+    console.log(`MediSync also accessible on your network IP at port ${PORT}`);
   });
 }
 
