@@ -115,7 +115,7 @@ export async function runDocumentAgent(
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       contents: `Extract structured clinical data from this medical document text. Only use values present in the text. Do not invent labs, clinicians, or facilities.\n\nSOURCE FILE: ${sourceFileName}\n\nDOCUMENT:\n${rawText}`,
       config: {
         responseMimeType: "application/json",
