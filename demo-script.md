@@ -1,6 +1,6 @@
-# MediSync Demo Script - Presentation Guide
+# MediSync Demo Script - Complete User Guide
 
-## 🎯 Presentation Overview (प्रस्तुति अवलोकन)
+## 🎯 Application Overview (एप्लिकेशन अवलोकन)
 
 **MediSync** ek AI-powered Personal Health Passport hai jo medical records ko structured timeline mein convert karta hai aur doctors ke liye evidence-backed insights provide karta hai.
 
@@ -28,377 +28,559 @@ http://localhost:3000
 
 ---
 
-## 📋 Demo Presentation Flow (डेमो प्रस्तुति प्रवाह)
+## 📋 Complete User Guide - Step by Step (पूर्ण उपयोगकर्ता गाइड - चरण दर चरण)
 
 ### 🔐 Step 1: Login & Authentication (लॉगिन और प्रमाणीकरण)
 
-**What to Show:**
-- Landing page with clean, medical-themed UI
-- Demo login credentials
+**कैसे करें:**
+1. Browser mein `http://localhost:3000` open karein
+2. Landing page par "Enter Demo Health Passport" button dikhega
+3. Username field mein `demo` type karein
+4. Password field mein `12345` type karein
+5. "Login" button click karein
+
+**क्या दिखेगा:**
+- Clean, medical-themed UI with stethoscope icon
+- Demo credentials clearly displayed
+- Smooth login animation
+- Redirect to main dashboard
+
+**Key Features:**
 - Secure authentication flow
-
-**Key Talking Points:**
-- "Yeh ek secure health passport system hai"
-- "Demo credentials se real patient data access"
-- "Enterprise-grade security with session management"
-
-**Action:** Click "Enter Demo Health Passport" with demo/12345
+- Demo mode for testing
+- Session management
 
 ---
 
 ### 👤 Step 2: Patient Profile Overview (रोगी प्रोफाइल अवलोकन)
 
-**What to Show:**
-- Complete patient profile with Aarav Sharma's information
-- Personal details: DOB, blood type, emergency contact
-- Medical conditions: Hypertension, Asthma, Allergies
-- Current medications with dosages
+**क्या दिखेगा:**
+- Patient naam: **Aarav Sharma**
+- Personal details:
+  - Date of Birth: 1988-06-12
+  - Blood Type: O-Positive
+  - Emergency Contact: Dr. Priyah Sharma (+91-98765-43210)
+- Medical Conditions:
+  - Primary Hypertension
+  - Mild Asthma
+  - Seasonal Allergic Rhinitis
+- Allergies:
+  - Penicillin
+  - Sulfonamides
+  - Peanuts
+- Current Medications:
+  - Lisinopril 10mg (1x daily)
+  - Albuterol inhaler (as needed)
+  - Cetirizine 10mg (at bedtime)
 
-**Key Talking Points:**
-- "Comprehensive patient profile at a glance"
-- "Critical information like allergies and blood type highlighted"
-- "Emergency contact for quick access"
-- "Current medications with proper dosages"
+**कैसे इस्तेमाल करें:**
+- Profile section automatically load ho jata hai
+- Sab critical information top par highlighted hai
+- Red color for allergies (safety warning)
+- Emergency contact prominently displayed
 
-**Technical Highlight:**
-- Data structure with TypeScript types
-- Real-time state management
-- Clean UI with medical safety colors
+**Technical Features:**
+- Real-time data synchronization
+- TypeScript-based type safety
+- Medical safety color coding
+- Responsive design
 
 ---
 
-### 📊 Step 3: Health Timeline (स्वास्थ्य समयरेखा)
+### 📊 Step 3: Health Timeline Navigation (स्वास्थ्य समयरेखा नेविगेशन)
 
-**What to Show:**
-- Timeline view of all medical events
-- Different event types: Consultations, Lab Results, Procedures
-- Each event shows: date, doctor/facility, findings, observations
+**क्या दिखेगा:**
+Timeline mein 4 main events hain:
 
-**Sample Events to Highlight:**
-1. **Annual Cardiology Evaluation** (April 2026)
-   - BP: 124/78 mmHg, Heart Rate: 68 bpm
+1. **Annual Cardiology Evaluation** (April 10, 2026)
+   - Type: Consultation
+   - Severity: Low (Green)
    - Doctor: Dr. Sarah Lin (FACC)
-   
-2. **Comprehensive Metabolic Panel** (February 2026)
-   - Lab results: Creatinine, Glucose, Cholesterol
-   
-3. **HbA1c Lab Panel** (January → April 2026)
-   - Shows improvement: 8.2% → 7.7%
+   - Facility: Metro Cardiac & Vascular Institute
+   - Findings: "Under control. Resting BP: 124/78 mmHg. Heart rate: 68 bpm."
+   - Observations:
+     - Systolic BP: 124 mmHg
+     - Diastolic BP: 78 mmHg
+     - Heart Rate: 68 bpm
 
-**Key Talking Points:**
-- "Longitudinal health timeline showing medical history"
-- "Automatic extraction of numeric observations from lab reports"
-- "Different event types with color-coded severity"
-- "Chronological view for easy tracking"
+2. **Comprehensive Metabolic Panel** (February 18, 2026)
+   - Type: Laboratory
+   - Severity: Low (Green)
+   - Facility: Apex Diagnostics Lab
+   - Findings: "Creatinine: 0.9 mg/dL. Blood glucose fasting: 92 mg/dL. Total cholesterol: 204 mg/dL."
+   - Observations:
+     - Creatinine: 0.9 mg/dL
+     - Glucose: 92 mg/dL
+     - Cholesterol: 204 mg/dL
 
-**Technical Highlight:**
-- Timeline event data structure
-- Automatic observation extraction from text
+3. **HbA1c Lab Panel** (January 10, 2026)
+   - Type: Laboratory
+   - Severity: Medium (Yellow)
+   - Facility: Apex Diagnostics Lab
+   - Findings: "HbA1c: 8.2 %"
+   - Observations:
+     - HbA1c: 8.2 %
+
+4. **HbA1c Lab Panel** (April 18, 2026)
+   - Type: Laboratory
+   - Severity: Low (Green)
+   - Facility: Apex Diagnostics Lab
+   - Findings: "HbA1c: 7.7 %"
+   - Observations:
+     - HbA1c: 7.7 %
+
+**कैसे इस्तेमाल करें:**
+- Timeline automatically chronological order mein load hota hai
+- Har event par click karke detailed view dekh sakte hain
+- Color coding: Green (Low), Yellow (Medium), Red (High)
+- Scroll karke pura timeline dekh sakte hain
+
+**Key Features:**
+- Automatic numeric observation extraction
 - Severity-based color coding
-- Responsive timeline design
+- Chronological organization
+- Detailed event view
 
 ---
 
-### 🤖 Step 4: Bindu Hub - AI Intelligence (बिंदु हब - एआई बुद्धिमत्ता)
+### 🤖 Step 4: AI Intelligence Features (एआई बुद्धिमत्ता विशेषताएं)
 
 #### 4.1 Run Insight Agent (इनसाइट एजेंट चलाएं)
 
-**What to Show:**
-- Click "Run Insight Agent" button
-- AI processes timeline data
-- Evidence-backed trends appear
+**कैसे करें:**
+1. "Bindu Hub - AI Intelligence" section mein jayein
+2. "Run Insight Agent" button click karein
+3. AI processing load hoga (spinner dikhega)
+4. Results automatically generate honge
 
-**Sample Trends Generated:**
+**क्या दिखेगा:**
+AI trends analysis:
 - **HbA1c Trend**: 8.2% → 7.7% (Decreasing ✅)
-- **Blood Pressure**: Single data points
+  - Analysis: "HbA1c decreased from 8.2% to 7.7% between January and April 2026, indicating improved glycemic control."
+- **Blood Pressure**: Limited data points
+  - Analysis: "Insufficient data points for trend analysis. More readings needed."
 - **Lab Values**: Complete numeric series
+  - Analysis: "Comprehensive lab data available for metabolic panel analysis."
 
-**Key Talking Points:**
-- "AI analyzes recorded numeric values only"
-- "Evidence-backed insights - no hallucinations"
-- "Trend detection for longitudinal monitoring"
-- "Single-click analysis of entire medical history"
-
-**Technical Highlight:**
-- Google Gemini AI integration
-- Local observation collection
-- Trend analysis algorithms
-- Evidence-based filtering
+**Technical Process:**
+1. AI collects all numeric observations from timeline
+2. Groups by test name
+3. Analyzes trends over time
+4. Generates evidence-backed insights
+5. No hallucinations - sirf recorded data analysis
 
 #### 4.2 Prepare Doctor Visit (डॉक्टर यात्रा तैयार करें)
 
-**What to Show:**
-- Click "Prepare Doctor Visit" button
-- Comprehensive doctor brief generated
-- Patient summary, recent events, trends, latest results
+**कैसे करें:**
+1. Same "Bindu Hub" section mein
+2. "Prepare Doctor Visit" button click karein
+3. Comprehensive doctor brief generate hoga
 
-**Doctor Brief Contents:**
-- Patient summary with conditions & medications
-- Recent 5 medical events
-- Evidence-backed trends
-- Latest lab results
-- Medications & allergies list
+**क्या दिखेगा:**
+Complete doctor brief with:
+- **Patient Summary**:
+  - Name: Aarav Sharma
+  - Conditions: Primary Hypertension, Mild Asthma, Seasonal Allergic Rhinitis
+  - Medications: Lisinopril 10mg, Albuterol inhaler, Cetirizine 10mg
+  - Allergies: Penicillin, Sulfonamides, Peanuts
 
-**Key Talking Points:**
-- "One-click doctor brief preparation"
-- "Summarizes entire medical history for clinicians"
-- "Evidence-backed trends for informed decisions"
-- "Saves time during doctor visits"
+- **Recent Medical Events** (Last 5):
+  1. Annual Cardiology Evaluation (April 2026)
+  2. HbA1c Lab Panel (April 2026)
+  3. Comprehensive Metabolic Panel (February 2026)
+  4. HbA1c Lab Panel (January 2026)
 
-**Technical Highlight:**
-- Multi-agent orchestration
-- Timeline, Document, and Insight agents working together
-- Structured output for clinician consumption
+- **Evidence-Backed Trends**:
+  - HbA1c improvement: 8.2% → 7.7%
+  - Blood pressure stability
+  - Lab value analysis
+
+- **Latest Lab Results**:
+  - Most recent HbA1c: 7.7%
+  - Latest metabolic panel values
+
+**Key Benefits:**
+- One-click comprehensive summary
+- Saves doctor consultation time
+- Evidence-based information
+- Complete medical history overview
 
 #### 4.3 Emergency View (आपातकालीन दृश्य)
 
-**What to Show:**
-- Switch to "Emergency" tab
-- Critical health information only
-- Emergency contact, medications, allergies
+**कैसे करें:**
+1. Profile section mein "Emergency" tab click karein
+2. Ya direct URL: `http://localhost:3000/#emergency-demo`
+3. Emergency QR code scan karein
 
-**Key Talking Points:**
-- "Quick access to critical information in emergencies"
-- "Shows only essential data for rapid decision-making"
-- "Accessible via special URL: #emergency-{id}"
-- "Designed for emergency responders"
+**क्या दिखेगा:**
+Red-themed emergency interface with:
+- Patient Name: Aarav Sharma
+- Blood Type: O-Positive (Large display)
+- Allergies: Penicillin, Sulfonamides, Peanuts
+- Conditions: Primary Hypertension, Mild Asthma
+- Medications: Lisinopril, Albuterol, Cetirizine
+- Emergency Contact: Dr. Priyah Sharma (+91-98765-43210)
+- Call button for emergency contact
+- Emergency QR code for quick access
 
-**Technical Highlight:**
-- Emergency-specific data filtering
-- URL-based emergency access
-- Minimal UI for high-stress situations
+**Emergency URL Format:**
+- `#emergency-{passportId}`
+- Example: `#emergency-demo`
+
+**Key Features:**
+- Minimal, high-contrast UI
+- Critical information only
+- Quick decision support
+- Emergency responder focused
 
 ---
 
 ### 📅 Step 5: Follow-up Management (फॉलो-अप प्रबंधन)
 
-**What to Show:**
-- Follow-up recommendation from HbA1c results
-- "Add to Calendar" button
-- Calendar integration (if configured)
+**क्या दिखेगा:**
+Pending follow-ups section mein:
+- **Follow-up Recommendation**:
+  - Date: October 18, 2026
+  - Note: "Follow-up after 3 months"
+  - Source: HbA1c Lab Panel (January 2026)
 
-**Sample Follow-up:**
-- Date: 2026-10-18
-- Note: "Follow-up after 3 months"
-- Source: HbA1c Lab Panel
+**कैसे करें:**
+1. "Pending Follow-ups" section mein jayein
+2. Follow-up recommendation dekhein
+3. "Add to Calendar" button click karein (if Google Calendar configured)
+4. OAuth flow complete karein
+5. Calendar event automatically create hoga
 
-**Key Talking Points:**
-- "Automatic follow-up detection from medical reports"
-- "One-click calendar integration"
-- "Google Calendar sync via Corsair"
-- "Never miss important follow-ups"
+**Technical Process:**
+1. AI extracts follow-up from medical text
+2. Calculates recommended date
+3. Integrates with Google Calendar via Corsair
+4. OAuth 2.0 authentication
+5. Automatic event creation
 
-**Technical Highlight:**
-- Follow-up extraction from text
-- Calendar API integration
-- OAuth 2.0 authentication flow
-- Cross-platform calendar support
+**Note:** Google Calendar configuration required in `.env` file for this feature.
 
 ---
 
 ### ⛓️ Step 6: Stellar Blockchain Verification (स्टेलर ब्लॉकचेन सत्यापन)
 
-**What to Show:**
-- Click "Verify on Stellar" for any timeline event
-- Record hash registered on Stellar testnet
-- QR code generation for clinician verification
+**कैसे करें:**
+1. Kisi bhi timeline event par jayein
+2. "Verify on Stellar" button click karein
+3. Blockchain transaction process hoga
+4. Verification status update hoga
 
-**Verification Process:**
-1. Hash calculation from medical record
-2. Registration on Stellar blockchain
-3. QR code generation
-4. Clinician scans to verify authenticity
+**क्या दिखेगा:**
+Process steps:
+1. **Hash Calculation**: Medical record se cryptographic hash generate hota hai
+2. **Blockchain Registration**: Hash Stellar testnet par register hota hai
+3. **Transaction Confirmation**: Transaction ID aur timestamp milta hai
+4. **Status Update**: Event status "verified" ho jata hai
 
-**Key Talking Points:**
-- "Blockchain-based medical record verification"
-- "Immutable proof of record authenticity"
-- "Doctors can verify records without accessing full data"
-- "Uses Stellar testnet for demo (no real money)"
+**After Verification:**
+- Event par green checkmark
+- Stellar transaction ID display
+- Blockchain verification timestamp
+- Contract ID (if using Soroban)
 
-**Technical Highlight:**
+**Technical Details:**
 - Stellar SDK integration
-- Hash-based record identification
-- QR code generation
-- Blockchain transaction management
+- SHA-256 hash calculation
+- Testnet transaction (no real money)
+- Immutable proof of authenticity
+
+**Verification for Doctors:**
+1. Doctor ko share link milta hai
+2. Link par click karke verification page
+3. Hash comparison on blockchain
+4. Authentic record confirmation
 
 ---
 
 ### 🔗 Step 7: Secure Record Sharing (सुरक्षित रिकॉर्ड साझाकरण)
 
-**What to Show:**
-- Click "Share" button on any timeline event
-- Two sharing options: Standard & Stellar Verified
-- Set expiration time (1-24 hours)
-- Generate shareable link/QR code
+**कैसे करें:**
+1. Timeline event par "Share" button click karein
+2. Sharing options select karein:
+   - **Standard Share**: Simple time-limited link
+   - **Stellar Verified**: Blockchain-verified sharing
+3. Expiration time set karein (1-24 hours)
+4. "Generate Share Link" click karein
+5. Link copy karein ya QR code scan karein
 
-**Sharing Options:**
-1. **Standard Share**: Time-limited link access
-2. **Stellar Verified**: Blockchain-verified sharing
+**क्या दिखेगा:**
+**Share Modal** with options:
+- Share Type Selection:
+  - Standard Share (Quick access)
+  - Stellar Verified (Enhanced security)
+- Expiration Time: 1, 6, 12, 24 hours
+- Generated Link: `http://localhost:3000/#share-{passportId}`
+- QR Code: For mobile scanning
+- Copy Link button
 
-**Key Talking Points:**
-- "Secure, time-limited record sharing"
-- "Doctor can access records without full system access"
-- "Expiration-based security"
-- "Blockchain verification option for sensitive data"
+**Share URL Formats:**
+- Standard: `#share-{passportId}`
+- Stellar Verified: `#verify-{passportId}-{eventId}`
+- Emergency: `#emergency-{passportId}`
+- Doctor Consent: `#doctor-consent-{consentId}`
 
-**Technical Highlight:**
-- Time-based access control
-- Secure link generation
-- QR code sharing
-- Permission management
+**Security Features:**
+- Time-limited access
+- Automatic link expiration
+- Permission-based access
+- Audit trail
 
 ---
 
 ### 📄 Step 8: PDF Export (पीडीएफ निर्यात)
 
-**What to Show:**
-- Click "Export PDF" button
-- Complete health passport downloads as PDF
-- Professional medical document format
+**कैसे करें:**
+1. Top mein "Export PDF" button click karein
+2. PDF automatically generate hoga
+3. Download start ho jayega
 
-**PDF Contents:**
-- Patient profile information
-- Complete health timeline
-- All observations and trends
-- Medications and allergies
-- Emergency contact details
+**क्या दिखेगा:**
+Professional medical PDF with:
+- **Header**: MediSync Health Passport
+- **Patient Information**:
+  - Name, DOB, Blood Type
+  - Emergency Contact
+- **Medical Summary**:
+  - Conditions, Allergies, Medications
+- **Complete Timeline**:
+  - All medical events chronologically
+  - Observations and findings
+  - Doctor and facility information
+- **Recent Trends**:
+  - AI-generated insights
+  - Lab value trends
+- **Footer**: Generated date and disclaimer
 
-**Key Talking Points:**
-- "Complete health record export in PDF format"
-- "Perfect for doctor visits or personal records"
-- "Professional medical document format"
-- "Client-side generation for privacy"
-
-**Technical Highlight:**
-- jsPDF library integration
-- Client-side PDF generation
-- Medical document formatting
-- Privacy-focused (no server storage)
-
----
-
-## 🎯 Key Features Summary (मुख्य विशेषताएं सारांश)
-
-### 1. **AI-Powered Health Intelligence**
-- Evidence-backed insights from recorded values
-- Multi-agent system (Document, Timeline, Insight agents)
-- Google Gemini AI integration
-- No hallucinations - only real data analysis
-
-### 2. **Longitudinal Health Timeline**
-- Chronological medical event tracking
-- Automatic observation extraction
-- Severity-based categorization
-- Color-coded visual timeline
-
-### 3. **Doctor Brief Preparation**
-- One-click clinician summary
-- Evidence-backed trend analysis
-- Recent events and latest results
-- Time-saving for consultations
-
-### 4. **Blockchain Verification**
-- Stellar blockchain integration
-- Immutable record verification
-- QR code-based clinician access
-- Privacy-preserving verification
-
-### 5. **Secure Sharing System**
-- Time-limited access control
-- Standard and blockchain-verified options
-- QR code generation
-- Permission management
-
-### 6. **Emergency Access**
-- Critical information only
-- URL-based emergency access
-- Minimal, high-contrast UI
-- Quick decision support
-
-### 7. **Follow-up Management**
-- Automatic follow-up detection
-- Calendar integration
-- Google Calendar sync
-- Reminder automation
-
-### 8. **PDF Export**
+**Technical Features:**
+- Client-side PDF generation (jsPDF)
+- No server storage (privacy-focused)
+- Professional medical formatting
 - Complete health record export
-- Professional medical format
-- Client-side generation
-- Privacy-focused
 
 ---
 
-## 🛠️ Technical Stack (तकनीकी स्टैक)
+### 🆕 Step 9: Document Upload & AI Processing (दस्तावेज़ अपलोड और एआई प्रोसेसिंग)
 
-### Frontend:
-- **React 19** - Latest React with concurrent features
-- **TypeScript** - Type-safe development
-- **Tailwind CSS 4** - Modern utility-first styling
-- **Vite** - Fast build tool and dev server
+**कैसे करें:**
+1. "Upload Medical Document" button click karein
+2. PDF file select karein
+3. Upload start hoga
+4. AI automatically extract karega
 
-### Backend:
-- **Express.js** - REST API server
-- **Google Gemini AI** - Medical text analysis
-- **Stellar SDK** - Blockchain verification
-- **Corsair** - Calendar integration
-- **jsPDF** - PDF generation
+**क्या दिखेगा:**
+**Upload Process:**
+1. File selection dialog
+2. Upload progress indicator
+3. PDF text extraction
+4. AI processing with steps:
+   - Document Agent: Text analysis
+   - Timeline Agent: Event creation
+   - Insight Agent: Trend analysis
+
+**AI Extraction Results:**
+- Document Type (Laboratory Report, Consultation, etc.)
+- Date and Facility information
+- Clinician details
+- Test results with numeric values
+- Medications and conditions
+- Findings and recommendations
+- Follow-up suggestions
+
+**Confirmation Process:**
+1. Extracted data review karein
+2. Edits if required
+3. "Confirm to Add to Timeline" click karein
+4. Event automatically timeline mein add ho jayega
+
+**Technical Process:**
+- PDF text extraction (pdf-parse)
+- Google Gemini AI analysis
+- Structured data extraction
+- Automatic observation detection
+- Timeline integration
+
+---
+
+### 🔐 Step 10: Consent Management (सहमति प्रबंधन)
+
+**कैसे करें:**
+1. "Share" section mein "Doctor Consent" tab select karein
+2. Doctor details fill karein:
+   - Doctor Name
+   - Report ID to share
+   - Permission Level (Read Only / Full Access)
+   - Expiry Hours
+3. "Register Consent" button click karein
+4. Stellar blockchain par consent register hoga
+
+**क्या दिखेगा:**
+**Consent Registration:**
+- Consent ID generate hoga
+- Stellar transaction confirmation
+- QR code for doctor verification
+- Consent details summary
+
+**Doctor Verification Process:**
+1. Doctor consent URL open karein: `#doctor-consent-{consentId}`
+2. Consent validity check on blockchain
+3. Patient summary access (if valid)
+4. Time-limited access as per consent
+
+**Security Features:**
+- Blockchain-based consent tracking
+- Time-limited access
+- Permission-based data sharing
+- Immutable consent records
+
+---
+
+## 🎯 Complete Feature Summary (पूर्ण विशेषता सारांश)
+
+### 🏥 Core Health Management
+- **Patient Profile**: Complete medical information
+- **Health Timeline**: Chronological medical history
+- **Observations Tracking**: Automatic numeric data extraction
+- **Severity Classification**: Color-coded risk assessment
+
+### 🤖 AI-Powered Intelligence
+- **Document Agent**: Medical text analysis and extraction
+- **Timeline Agent**: Event creation and organization
+- **Insight Agent**: Trend analysis and health insights
+- **Doctor Brief**: One-click clinician summary
+
+### 🔒 Security & Privacy
+- **Blockchain Verification**: Stellar-based record authentication
+- **Secure Sharing**: Time-limited access control
+- **Consent Management**: Doctor permission system
+- **Emergency Access**: Critical information only
+
+### 📅 Follow-up & Reminders
+- **Automatic Detection**: AI-powered follow-up extraction
+- **Calendar Integration**: Google Calendar sync
+- **Reminder System**: Never miss appointments
+- **Medication Tracking**: Current medications overview
+
+### 📄 Export & Sharing
+- **PDF Export**: Complete health record download
+- **QR Codes**: Quick mobile access
+- **Share Links**: Time-limited record sharing
+- **Emergency Mode**: Critical information access
+
+---
+
+## 🛠️ Technical Implementation Details (तकनीकी कार्यान्वयन विवरण)
+
+### Frontend Stack:
+- **React 19**: Latest React with concurrent features
+- **TypeScript**: Type-safe development
+- **Tailwind CSS 4**: Modern utility-first styling
+- **Vite**: Fast build tool and dev server
+- **Lucide React**: Icon library
+
+### Backend Stack:
+- **Express.js**: REST API server
+- **Google Gemini AI**: Medical text analysis (gemini-3.6-flash)
+- **Stellar SDK**: Blockchain verification
+- **Corsair**: Calendar integration
+- **jsPDF**: PDF generation
+- **pdf-parse**: PDF text extraction
 
 ### Key Technologies:
-- **Multi-Agent AI System** - Document, Timeline, Insight agents
-- **Blockchain Integration** - Stellar testnet for verification
-- **OAuth 2.0** - Google Calendar authentication
-- **Client-side PDF** - Privacy-focused document generation
+- **Multi-Agent AI System**: Document, Timeline, Insight agents
+- **Blockchain Integration**: Stellar testnet for verification
+- **OAuth 2.0**: Google Calendar authentication
+- **Client-side PDF**: Privacy-focused document generation
+- **Real-time State Management**: React hooks and context
 
 ---
 
-## 💡 Demo Tips & Tricks (डेमो टिप्स और ट्रिक्स)
+## 💡 Pro Tips & Tricks (प्रो टिप्स और ट्रिक्स)
 
-### For Smooth Presentation:
-1. **Pre-load the demo** - Open and login before presentation
-2. **Use demo data** - Show the predefined demo passport
-3. **Highlight AI features** - Focus on insight generation
-4. **Show blockchain** - Demonstrate Stellar verification
-5. **Keep it simple** - Don't configure OAuth during demo
+### For Best Experience:
+1. **Pre-load Demo**: Login before presentation for smooth demo
+2. **Use Demo Data**: Start with predefined Aarav Sharma passport
+3. **Test AI Features**: Try insight agent with different timelines
+4. **Blockchain Demo**: Show Stellar verification process
+5. **Emergency QR**: Test emergency access via QR code
 
-### Common Questions to Anticipate:
-- **"Is this real patient data?"** - No, it's demo/sample data only
-- **"Is the blockchain real?"** - Yes, but using testnet (no real money)
-- **"How does AI work?"** - Google Gemini for medical text analysis
-- **"Is it secure?"** - Yes, with time-limited sharing and blockchain verification
-- **"Can I use it for real patients?"** - Demo MVP, not production-ready
+### Common Use Cases:
+- **Doctor Visit Preparation**: Use "Prepare Doctor Visit" before appointments
+- **Health Monitoring**: Check "Run Insight Agent" for trend analysis
+- **Emergency Situations**: Use emergency view or QR code
+- **Record Sharing**: Generate time-limited links for specialists
+- **Personal Records**: Export PDF for personal health records
 
-### Fallback Options:
-- **Calendar not working?** - Skip calendar feature, focus on other features
-- **Stellar errors?** - Show UI without actual blockchain transaction
-- **AI not responding?** - Use pre-generated insights from demo data
+### Troubleshooting:
+- **AI Not Working**: Check GEMINI_API_KEY in .env file
+- **Calendar Integration**: Configure Google OAuth credentials
+- **Blockchain Errors**: Stellar testnet may be slow, try again
+- **PDF Export**: Check browser permissions for downloads
+- **QR Code Scanning**: Ensure proper URL format
 
 ---
 
-## 🎤 Presentation Script (प्रस्तुति स्क्रिप्ट)
+## 📞 Support & Documentation (सहायता और दस्तावेज़ीकरण)
 
-### Opening (2 minutes):
-"Welcome to MediSync - an AI-powered Personal Health Passport system. Today I'll show you how it transforms medical records into actionable health intelligence."
+### For Technical Issues:
+- Check `.env.example` for required environment variables
+- Review code comments for implementation details
+- Check console logs for error messages
+- Verify API keys and credentials
 
-### Core Demo (5-7 minutes):
-1. **Login & Profile** (1 min) - Show patient overview
-2. **Timeline** (1 min) - Show medical history timeline
-3. **AI Insights** (2 min) - Run insight agent, show trends
-4. **Doctor Brief** (1 min) - Prepare doctor visit summary
-5. **Blockchain** (1 min) - Stellar verification demo
-6. **Sharing** (1 min) - Secure record sharing
+### Documentation Links:
+- **Google Gemini AI**: https://ai.google.dev/gemini-api/docs
+- **Stellar SDK**: https://stellar.org/developers/stellar-sdk/js/index.html
+- **React Documentation**: https://react.dev/
+- **TypeScript**: https://www.typescriptlang.org/docs/
+
+### Important Notes:
+- This is a **demo MVP** for hackathon purposes
+- **Not for production use** with real patient data
+- Uses **Stellar testnet** (no real money involved)
+- Demo data is **sample/fictional** only
+- Always comply with **HIPAA regulations** for real medical data
+
+---
+
+## 🎤 Demo Presentation Script (डेमो प्रस्तुति स्क्रिप्ट)
+
+### Opening (1 minute):
+"Namaste! Aaj main aapko MediSync dikhane wala hoon - ye ek AI-powered Personal Health Passport system hai jo medical records ko structured timeline mein convert karta hai aur doctors ke liye evidence-backed insights provide karta hai."
+
+### Step-by-Step Demo (8-10 minutes):
+
+**Login (30 seconds):**
+"Pehle main demo credentials se login karta hoon - username 'demo' aur password '12345'."
+
+**Profile Overview (1 minute):**
+"Yeh hai patient ka complete profile - Aarav Sharma. Yahan humein unki blood type, allergies, conditions, aur current medications dikhte hain. Sab critical information red color mein highlighted hai for safety."
+
+**Timeline (1.5 minutes):**
+"Yeh health timeline hai - chronologically arranged medical events. Har event type alag hai - consultations, lab results, procedures. Dekhiye HbA1c values - January mein 8.2% tha, April mein 7.7% ho gaya, improvement dikhta hai."
+
+**AI Features (2 minutes):**
+"Ab AI features dekhte hain. 'Run Insight Agent' click karta hoon - AI poore timeline ka analysis karta hai aur trends nikalta hai. HbA1c improvement detect kiya. Phir 'Prepare Doctor Visit' - complete doctor brief generate ho gaya with patient summary, recent events, aur trends."
+
+**Emergency View (1 minute):**
+"Emergency mode bhi hai - red themed interface with sirf critical information. Blood type, allergies, emergency contact - sab emergency responders ke liye designed hai."
+
+**Blockchain Verification (1.5 minutes):**
+"Stellar blockchain verification - kisi bhi event par 'Verify on Stellar' click karta hoon. Record hash calculate hota hai, blockchain par register hota hai, aur verification mil jata hai. Doctors records verify kar sakte hain without full data access."
+
+**Sharing (1 minute):**
+"Secure sharing feature - time-limited links generate kar sakte hain. Standard share ya Stellar verified share option hai. Expiration time set kar sakte hain - 1 se 24 hours."
+
+**PDF Export (30 seconds):**
+"Complete health record PDF export kar sakte hain - professional medical format mein sab kuch download ho jata hai."
 
 ### Closing (1 minute):
-"MediSync demonstrates how AI and blockchain can transform healthcare records management. It provides evidence-backed insights, secure sharing, and blockchain verification - all in one comprehensive system."
+"MediSync demonstrates how AI aur blockchain healthcare records management ko transform kar sakte hain. Evidence-backed insights, secure sharing, blockchain verification - sab ek comprehensive system mein. Thank you!"
 
 ---
 
-## 📞 Contact & Support (संपर्क और सहायता)
-
-For questions about:
-- **Technical implementation**: Check code comments and documentation
-- **AI integration**: Google Gemini API documentation
-- **Blockchain**: Stellar SDK documentation
-- **Calendar**: Corsair integration docs
-
-**Note**: This is a demo MVP for hackathon purposes. Not for production use with real patient data.
+**End of Complete User Guide**

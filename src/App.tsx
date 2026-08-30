@@ -744,7 +744,7 @@ export default function App() {
                 alt="QR Code"
                 className="border-4 border-[#5a5a40] rounded-xl p-2"
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                  `http://192.168.1.15:3000/#share-demo`
+                  `${window.location.origin}/#share-${passport.id}`
                 )}`}
               />}
               <div className="w-full">
@@ -753,13 +753,13 @@ export default function App() {
                   <input
                     type="text"
                     readOnly
-                    value={passport ? `http://192.168.1.15:3000/#share-demo` : ''}
+                    value={passport ? `${window.location.origin}/#share-${passport.id}` : ''}
                     className="flex-1 border border-[#dfebe0] rounded-lg px-3 py-2 text-xs font-mono"
                   />
                   <button
                     onClick={() => {
                       if (passport) {
-                        navigator.clipboard.writeText(`http://192.168.1.15:3000/#share-demo`);
+                        navigator.clipboard.writeText(`${window.location.origin}/#share-${passport.id}`);
                         setQrCopied(true);
                         setTimeout(() => setQrCopied(false), 2000);
                       }
@@ -773,7 +773,7 @@ export default function App() {
               <div className="flex gap-2 w-full">
                 <button
                   onClick={() => {
-                    const shareUrl = `http://192.168.1.15:3000/#share-demo`;
+                    const shareUrl = `${window.location.origin}/#share-${passport?.id || 'demo'}`;
                     console.log("Opening share URL:", shareUrl);
                     window.open(shareUrl, '_blank');
                   }}
@@ -786,7 +786,7 @@ export default function App() {
                   onClick={() => {
                     const link = document.createElement('a');
                     link.href = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-                      `http://192.168.1.15:3000/#share-demo`
+                      `${window.location.origin}/#share-${passport?.id || 'demo'}`
                     )}`;
                     link.download = 'medisync-qr.png';
                     link.click();
