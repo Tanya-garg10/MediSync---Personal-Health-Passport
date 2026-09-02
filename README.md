@@ -128,6 +128,8 @@ Functions:
 
 Deploy to Stellar Testnet, then set `MEDISYNC_CONTRACT_ID`. Without it, MediSync still registers hashes on Testnet via account ManageData.
 
+Stellar Contract ID: CBNQKYY4D7GKM7XTMFKVNLR3BAJTW3WCZ6B5WPYFM5B6QCCHXAUFNLS5
+
 ## 📅 Calendar Integration
 
 Configure with Corsair CLI:
