@@ -1,5 +1,5 @@
 <div align="center">
-# 🏥 MediSync — Personal Health Passport
+<h1>🏥 MediSync — Personal Health Passport</h1>
 </div>
 
 <div align="center">
