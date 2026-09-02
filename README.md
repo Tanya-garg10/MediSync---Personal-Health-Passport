@@ -1,4 +1,6 @@
+<div align="center">
 # 🏥 MediSync — Personal Health Passport
+</div>
 
 <div align="center">
 
